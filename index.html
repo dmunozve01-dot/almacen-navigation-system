@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Navegación de Almacén - Oslo Trujillo</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Panel Lateral -->
+        <aside class="sidebar">
+            <h2>Navegación ALBO</h2>
+            
+            <div class="control-panel">
+                <label class="switch-container">
+                    <input type="checkbox" id="mode-toggle"> 
+                    <span id="mode-label">Modo Usuario (Navegación)</span>
+                </label>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Código de tienda (ej: 1263)">
+                <button id="search-btn">Buscar</button>
+            </div>
+
+            <div id="search-results" class="results-container"></div>
+        </aside>
+
+        <!-- Contenedor del Mapa -->
+        <main class="map-section">
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Scripts de la aplicación (en el orden correcto) -->
+    <script src="js/storage.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/user.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
