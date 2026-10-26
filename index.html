@@ -1,47 +1,98 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Navegación de Almacén - Oslo Trujillo</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartWarehouse - Login</title>
+
+  <!-- FontAwesome Iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Identity Services Library -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Estilos Globales -->
+  <link rel="stylesheet" href="css/main.css">
 </head>
-<body>
-    <div class="app-container">
-        <!-- Panel Lateral -->
-        <aside class="sidebar">
-            <h2>Navegación ALBO</h2>
-            
-            <div class="control-panel">
-                <label class="switch-container">
-                    <input type="checkbox" id="mode-toggle"> 
-                    <span id="mode-label">Modo Usuario (Navegación)</span>
-                </label>
-            </div>
+<body class="login-body">
 
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Código de tienda (ej: 1263)">
-                <button id="search-btn">Buscar</button>
-            </div>
+  <main class="login-card">
+    <div class="brand-logo">
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+    <h2>SmartWarehouse GPS</h2>
+    <p>Acceso al Almacén Central<br><strong>(8°08'29.9"S 79°00'53.4"W)</strong></p>
 
-            <div id="search-results" class="results-container"></div>
-        </aside>
+    <!-- Botón Oficial de Google -->
+    <div id="googleBtnContainer" class="google-btn-wrapper"></div>
 
-        <!-- Contenedor del Mapa -->
-        <main class="map-section">
-            <div id="map"></div>
-        </main>
+    <div class="divider">
+      <span>o</span>
     </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Scripts de la aplicación (en el orden correcto) -->
-    <script src="js/storage.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/user.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Botón Demo / Invitado -->
+    <button class="btn btn-secondary-login" onclick="bypassLogin()">
+      <i class="fa-solid fa-user"></i> Continuar como Invitado / Operario
+    </button>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script>
+    window.onload = function() {
+      // Redirigir automáticamente si ya existe una sesión activa
+      const activeSession = localStorage.getItem('sw_session_user');
+      if (activeSession) {
+        window.location.assign('app.html');
+        return;
+      }
+
+      if (window.google) {
+        google.accounts.id.initialize({
+          client_id: APP_CONFIG.GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse
+        });
+
+        google.accounts.id.renderButton(
+          document.getElementById("googleBtnContainer"),
+          { theme: "outline", size: "large", text: "signin_with", shape: "rectangular", width: 280 }
+        );
+      }
+    };
+
+    function handleCredentialResponse(response) {
+      try {
+        if (!response.credential) return;
+
+        const userData = parseJwt(response.credential);
+        const sessionUser = {
+          name: userData.name || userData.email.split('@')[0],
+          email: userData.email,
+          picture: userData.picture || ''
+        };
+        
+        localStorage.setItem('sw_session_user', JSON.stringify(sessionUser));
+        window.location.assign('app.html');
+      } catch (error) {
+        console.error("Error al procesar login:", error);
+      }
+    }
+
+    function parseJwt(token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    }
+
+    function bypassLogin() {
+      const demoUser = {
+        name: "Operario Almacén",
+        email: "operario@almacen.com",
+        picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+      };
+      localStorage.setItem('sw_session_user', JSON.stringify(demoUser));
+      window.location.assign('app.html');
+    }
+  </script>
 </body>
 </html>

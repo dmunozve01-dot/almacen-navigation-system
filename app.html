@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartWarehouse - Dashboard GPS</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- FontAwesome Iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Estilos Globales -->
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Panel Lateral / Menú Inferior en Celulares -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="user-profile">
+          <img id="userAvatar" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar" class="avatar">
+          <div class="user-info">
+            <strong id="userName">Operario</strong>
+            <span id="userEmail" class="email">operario@almacen.com</span>
+          </div>
+          <button class="btn-logout" onclick="logout()" title="Cerrar Sesión">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Selector de Modo -->
+      <div class="mode-switch">
+        <button id="btnUser" class="btn-tab active" onclick="app.setRole('user')">
+          <i class="fa-solid fa-route"></i> Navegar
+        </button>
+        <button id="btnAdmin" class="btn-tab" onclick="app.setRole('admin')">
+          <i class="fa-solid fa-user-gear"></i> Mapear Admin
+        </button>
+      </div>
+
+      <!-- Panel de Navegación -->
+      <section id="userPanel" class="panel active">
+        <div class="card card-gps">
+          <h3><i class="fa-solid fa-satellite-dish"></i> Estado GPS Operario</h3>
+          <div class="status-indicator">
+            <span class="pulse-dot"></span>
+            <span id="gpsStatusText">Buscando GPS...</span>
+          </div>
+          <button class="btn btn-secondary" onclick="app.centerMapOnWarehouse()">
+            <i class="fa-solid fa-warehouse"></i> Enfocar Almacén
+          </button>
+        </div>
+
+        <div class="card">
+          <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Tienda / Slot</h3>
+          <div class="form-group">
+            <input type="text" id="searchInput" placeholder="Ej: 1615, 1723" onkeypress="app.handleSearchKeyPress(event)">
+          </div>
+          <button class="btn btn-primary" onclick="app.searchAndRoute()">
+            <i class="fa-solid fa-diamond-turn-right"></i> Trazar Ruta GPS
+          </button>
+          <button class="btn btn-danger-outline" onclick="app.clearCurrentRoute()">
+            <i class="fa-solid fa-xmark"></i> Limpiar Ruta
+          </button>
+        </div>
+
+        <div id="routeInfoCard" class="card card-route hidden">
+          <h3><i class="fa-solid fa-route"></i> Telemetría</h3>
+          <div class="telemetry-grid">
+            <div><span>Distancia:</span> <strong id="routeDist">0 m</strong></div>
+            <div><span>Destino:</span> <strong id="routeTarget">-</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panel Administrador -->
+      <section id="adminPanel" class="panel">
+        <div class="card">
+          <h3><i class="fa-solid fa-map-pin"></i> Mapear Posición Exacta</h3>
+          <button class="btn btn-secondary" onclick="app.useCurrentGPSForAdmin()">
+            <i class="fa-solid fa-location-dot"></i> Usar mi GPS
+          </button>
+          <div class="coords-box" id="adminCoordsBox">Sin selección</div>
+          <div class="form-group">
+            <label>Código de Tienda / Slot</label>
+            <input type="text" id="adminCodeInput" placeholder="Ej: 1723">
+          </div>
+          <div class="form-group">
+            <label>Zona Perteneciente</label>
+            <select id="adminZoneSelect">
+              <option value="ZONA TRUJILLO">ZONA TRUJILLO</option>
+              <option value="ZONA CHIMBOTE A">ZONA CHIMBOTE A</option>
+              <option value="ZONA CHIMBOTE B">ZONA CHIMBOTE B</option>
+              <option value="ZONA VIRÚ">ZONA VIRÚ</option>
+              <option value="ZONA CHICAMA">ZONA CHICAMA</option>
+            </select>
+          </div>
+          <button class="btn btn-success" onclick="app.saveWaypoint()">
+            <i class="fa-solid fa-floppy-disk"></i> Guardar Posición Única
+          </button>
+        </div>
+
+        <div class="card">
+          <h3><i class="fa-solid fa-list-check"></i> Tiendas Registradas (<span id="wpCount">0</span>)</h3>
+          <div id="waypointsList" class="wp-scroll-container"></div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Mapa Principal -->
+    <main class="map-viewport">
+      <div id="map"></div>
+    </main>
+  </div>
+
+  <!-- Scripts JavaScript -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/data/storeRepository.js"></script>
+  <script src="js/services/gpsService.js"></script>
+  <script src="js/controllers/appController.js"></script>
+
+  <script>
+    // Recuperación de sesión
+    const sessionUser = JSON.parse(localStorage.getItem('sw_session_user'));
+    if (!sessionUser) {
+      window.location.assign('index.html');
+    } else {
+      document.getElementById('userName').innerText = sessionUser.name;
+      document.getElementById('userEmail').innerText = sessionUser.email;
+      if (sessionUser.picture) {
+        document.getElementById('userAvatar').src = sessionUser.picture;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('sw_session_user');
+      window.location.assign('index.html');
+    }
+  </script>
+</body>
+</html>
