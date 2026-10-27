@@ -35,7 +35,8 @@
         <button id="btnUser" class="btn-tab active" onclick="app.setRole('user')">
           <i class="fa-solid fa-route"></i> Navegar
         </button>
-        <button id="btnAdmin" class="btn-tab" onclick="app.setRole('admin')">
+        <!-- Este botón está oculto por defecto, se muestra solo si es admin -->
+        <button id="btnAdmin" class="btn-tab hidden" onclick="app.setRole('admin')">
           <i class="fa-solid fa-user-gear"></i> Mapear Admin
         </button>
       </div>
@@ -118,7 +119,7 @@
     </main>
   </div>
 
-  <!-- JavaScript Scripts (Carga de Módulos y Librerías) -->
+  <!-- JavaScript Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/utils/crypto.js"></script>
   <script src="js/config.js"></script>
@@ -131,6 +132,10 @@
   <script>
     // Validar sesión del usuario al cargar la página
     checkAppSession();
+    // Aplicar visibilidad de roles
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(applyUserRole, 100); 
+    });
   </script>
 </body>
 </html>

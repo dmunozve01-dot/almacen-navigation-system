@@ -1,6 +1,3 @@
-/**
- * SERVICIO DE GEOLOCALIZACIÓN GPS EN VIVO CON RESPALDO
- */
 class GPSService {
   constructor() {
     this.currentPosition = null;
@@ -15,14 +12,11 @@ class GPSService {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        this.currentPosition = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
+        this.currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         onPositionUpdate(this.currentPosition);
       },
       (err) => {
-        console.warn("GPS no disponible/permiso denegado. Cargando ubicación por defecto del Almacén.");
+        console.warn("GPS denegado. Usando base.");
         this.useFallback(onPositionUpdate);
       },
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
@@ -30,10 +24,7 @@ class GPSService {
 
     this.watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        this.currentPosition = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
+        this.currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         onPositionUpdate(this.currentPosition);
       },
       (err) => console.warn("Rastreo GPS en espera..."),
@@ -42,11 +33,17 @@ class GPSService {
   }
 
   useFallback(onPositionUpdate) {
-    this.currentPosition = APP_CONFIG.WAREHOUSE_LOCATION;
+    this.currentPosition = {
+      lat: APP_CONFIG.STAGING_LOCATION.lat,
+      lng: APP_CONFIG.STAGING_LOCATION.lng
+    };
     onPositionUpdate(this.currentPosition);
   }
 
   getCurrentPosition() {
-    return this.currentPosition || APP_CONFIG.WAREHOUSE_LOCATION;
+    return this.currentPosition || {
+      lat: APP_CONFIG.STAGING_LOCATION.lat,
+      lng: APP_CONFIG.STAGING_LOCATION.lng
+    };
   }
 }

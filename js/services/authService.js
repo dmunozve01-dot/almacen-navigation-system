@@ -1,7 +1,3 @@
-/**
- * AUTENTICACIÓN Y REGISTRO EN BASE DE DATOS SHEETS
- */
-
 function checkAppSession() {
   const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
                       JSON.parse(localStorage.getItem('sw_session_user'));
@@ -21,42 +17,32 @@ function checkAppSession() {
 
 function handleCredentialResponse(response) {
   const payload = parseJwt(response.credential);
-  
   const userData = {
     name: payload.name,
     email: payload.email,
     picture: payload.picture
   };
-
   saveUserSession(userData);
 }
 
-function saveUserSession(userData) {
+async function saveUserSession(userData) {
   const rememberEl = document.getElementById('rememberMe');
   const remember = rememberEl ? rememberEl.checked : false;
 
-  if (remember) {
-    localStorage.setItem('sw_session_user', JSON.stringify(userData));
-  } else {
-    sessionStorage.setItem('sw_session_user', JSON.stringify(userData));
-  }
-
-  // Enviar credenciales a la base de datos de Google Sheets
+  // 1. Consultar Rol a la nube
+  let role = "USER";
   if (typeof apiService !== 'undefined') {
+    role = await apiService.getUserRole(userData.email);
+    userData.role = role;
     apiService.syncUser(userData);
   }
 
+  // 2. Guardar en navegador
+  if (remember) localStorage.setItem('sw_session_user', JSON.stringify(userData));
+  else sessionStorage.setItem('sw_session_user', JSON.stringify(userData));
+
+  // 3. Redirigir
   window.location.assign('app.html');
-}
-
-function loginDemo() {
-  const demoUser = {
-    name: "Operario Almacén",
-    email: "operario@almacen.com",
-    picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-  };
-
-  saveUserSession(demoUser);
 }
 
 function logout() {
@@ -73,8 +59,34 @@ function parseJwt(token) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     return JSON.parse(jsonPayload);
-  } catch (e) {
-    console.error("Error parseando token JWT", e);
-    return {};
+  } catch (e) { return {}; }
+}
+
+function applyUserRole() {
+  const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
+                      JSON.parse(localStorage.getItem('sw_session_user'));
+  const btnAdmin = document.getElementById('btnAdmin');
+  
+  if (sessionUser && sessionUser.role === "ADMIN") {
+    if (btnAdmin) btnAdmin.classList.remove('hidden');
+  } else {
+    if (btnAdmin) btnAdmin.classList.add('hidden');
+    if (typeof app !== 'undefined' && app.setRole) app.setRole('user');
   }
 }
+
+// Botón Demo
+document.addEventListener('DOMContentLoaded', () => {
+  const btnDemo = document.getElementById('btnDemoLogin');
+  if (btnDemo) {
+    btnDemo.addEventListener('click', async function(e) {
+      e.preventDefault();
+      const demoUser = {
+        name: "Operario Demo",
+        email: "operario@almacen.com",
+        picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+      };
+      await saveUserSession(demoUser);
+    });
+  }
+});
