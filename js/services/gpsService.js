@@ -1,56 +1,52 @@
 /**
- * REPOSITORIO DE DATOS Y MANEJO DE ANTIDUPLICADOS
+ * SERVICIO DE GEOLOCALIZACIÓN GPS EN VIVO CON RESPALDO
  */
-class StoreRepository {
+class GPSService {
   constructor() {
-    this.rawInitialData = [
-      { code: "1263", name: "BUENOS3 TRU", zone: "ZONA TRUJILLO", lat: -8.1130, lng: -79.0300 },
-      { code: "1264", name: "PALMA8 TRU", zone: "ZONA TRUJILLO", lat: -8.1150, lng: -79.0280 },
-      { code: "1835", name: "MIRAF22 CHB", zone: "ZONA CHIMBOTE A", lat: -9.0744, lng: -78.5936 },
-      { code: "1770", name: "PROGRE3 TRU", zone: "ZONA CHICAMA", lat: -7.8420, lng: -79.1410 },
-      { code: "1730", name: "VIRU20 TRU", zone: "ZONA VIRÚ", lat: -8.4167, lng: -78.8000 },
-      { code: "1268", name: "MOCHE8 TRU", zone: "ZONA TRUJILLO", lat: -8.1691, lng: -79.0094 },
-      { code: "1723", name: "RAMONG1 TRU", zone: "ZONA TRUJILLO", lat: -8.1116, lng: -79.0286 },
-      { code: "1615", name: "PRADA O13 TRU", zone: "ZONA VIRÚ", lat: -8.4180, lng: -78.8020 }
-    ];
+    this.currentPosition = null;
+    this.watchId = null;
   }
 
-  getAll() {
-    const saved = localStorage.getItem(APP_CONFIG.STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    
-    // Antiduplicados inicial por código único
-    const cleanMap = new Map();
-    this.rawInitialData.forEach(item => cleanMap.set(item.code, item));
-    const cleanList = Array.from(cleanMap.values());
-    this.saveAll(cleanList);
-    return cleanList;
-  }
-
-  saveAll(list) {
-    localStorage.setItem(APP_CONFIG.STORAGE_KEY, JSON.stringify(list));
-  }
-
-  saveOrUpdate(waypoint) {
-    const currentList = this.getAll();
-    const existingIndex = currentList.findIndex(item => item.code === waypoint.code);
-
-    if (existingIndex !== -1) {
-      currentList[existingIndex] = { ...currentList[existingIndex], ...waypoint };
-    } else {
-      currentList.push(waypoint);
+  startTracking(onPositionUpdate, onError) {
+    if (!("geolocation" in navigator)) {
+      this.useFallback(onPositionUpdate);
+      return;
     }
 
-    this.saveAll(currentList);
-    return currentList;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.currentPosition = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        };
+        onPositionUpdate(this.currentPosition);
+      },
+      (err) => {
+        console.warn("GPS no disponible/permiso denegado. Cargando ubicación por defecto del Almacén.");
+        this.useFallback(onPositionUpdate);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+
+    this.watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        this.currentPosition = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        };
+        onPositionUpdate(this.currentPosition);
+      },
+      (err) => console.warn("Rastreo GPS en espera..."),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   }
 
-  delete(index) {
-    const currentList = this.getAll();
-    currentList.splice(index, 1);
-    this.saveAll(currentList);
-    return currentList;
+  useFallback(onPositionUpdate) {
+    this.currentPosition = APP_CONFIG.WAREHOUSE_LOCATION;
+    onPositionUpdate(this.currentPosition);
+  }
+
+  getCurrentPosition() {
+    return this.currentPosition || APP_CONFIG.WAREHOUSE_LOCATION;
   }
 }

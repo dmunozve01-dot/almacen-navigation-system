@@ -17,6 +17,9 @@ class AppController {
   }
 
   init() {
+    const mapDiv = document.getElementById('map');
+    if (!mapDiv) return;
+
     this.initMap();
     this.waypoints = this.storeRepo.getAll();
     this.renderWaypointsOnMap();
@@ -32,15 +35,17 @@ class AppController {
     const whLng = APP_CONFIG.WAREHOUSE_LOCATION.lng;
     const zoom = APP_CONFIG.WAREHOUSE_LOCATION.zoom;
 
-    this.map = L.map('map', {
-      zoomControl: true,
-      attributionControl: false
-    }).setView([whLat, whLng], zoom);
+    // Si el mapa ya estaba inicializado, lo eliminamos primero
+    if (this.map) {
+      this.map.remove();
+    }
 
-    // Carga de mosaicos del mapa OpenStreetMap
+    this.map = L.map('map').setView([whLat, whLng], zoom);
+
+    // Servidor de mapas OpenStreetMap
     L.tileLayer(APP_CONFIG.MAP_TILE_PROVIDER, { 
       maxZoom: 19,
-      attribution: '© OpenStreetMap' 
+      attribution: '© OpenStreetMap'
     }).addTo(this.map);
 
     // Marcador Fijo del Almacén Central
@@ -54,15 +59,16 @@ class AppController {
 
     this.map.on('click', (e) => this.onMapClick(e));
 
-    // REAJUSTE DE DIMENSIONES OBLIGATORIO PARA CELULARES
+    // REAJUSTAR TAMAÑO DEL LIENZO
     setTimeout(() => {
       if (this.map) {
         this.map.invalidateSize();
       }
-    }, 400);
+    }, 300);
   }
 
   centerMapOnWarehouse() {
+    if (!this.map) return;
     this.map.setView(
       [APP_CONFIG.WAREHOUSE_LOCATION.lat, APP_CONFIG.WAREHOUSE_LOCATION.lng],
       APP_CONFIG.WAREHOUSE_LOCATION.zoom
@@ -75,6 +81,8 @@ class AppController {
     if (statusText) {
       statusText.innerText = `Ubicación Activa: (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)})`;
     }
+
+    if (!this.map) return;
 
     if (!this.userMarker) {
       const userIcon = L.divIcon({
@@ -133,7 +141,7 @@ class AppController {
   }
 
   clearCurrentRoute() {
-    if (this.routePolyline) {
+    if (this.routePolyline && this.map) {
       this.map.removeLayer(this.routePolyline);
       this.routePolyline = null;
     }
@@ -160,12 +168,14 @@ class AppController {
   }
 
   renderWaypointsOnMap() {
+    if (!this.map) return;
     Object.values(this.markersMap).forEach(m => this.map.removeLayer(m));
     this.markersMap = {};
 
     const listEl = document.getElementById('waypointsList');
-    listEl.innerHTML = '';
-    document.getElementById('wpCount').innerText = this.waypoints.length;
+    if (listEl) listEl.innerHTML = '';
+    const countEl = document.getElementById('wpCount');
+    if (countEl) countEl.innerText = this.waypoints.length;
 
     this.waypoints.forEach((wp, idx) => {
       const marker = L.marker([wp.lat, wp.lng], {
@@ -177,10 +187,12 @@ class AppController {
 
       this.markersMap[wp.code] = marker;
 
-      const item = document.createElement('div');
-      item.className = 'wp-item';
-      item.innerHTML = `<strong>${wp.code}</strong> <span>${wp.zone}</span> <button onclick="app.deleteWp(${idx})">🗑️</button>`;
-      listEl.appendChild(item);
+      if (listEl) {
+        const item = document.createElement('div');
+        item.className = 'wp-item';
+        item.innerHTML = `<strong>${wp.code}</strong> <span>${wp.zone}</span> <button onclick="app.deleteWp(${idx})">🗑️</button>`;
+        listEl.appendChild(item);
+      }
     });
   }
 
@@ -195,7 +207,6 @@ class AppController {
     document.getElementById('adminPanel').classList.toggle('active', role === 'admin');
     document.getElementById('userPanel').classList.toggle('active', role === 'user');
 
-    // Forzar recalculo de lienzo al cambiar de pestaña
     setTimeout(() => {
       if (this.map) this.map.invalidateSize();
     }, 200);
@@ -204,5 +215,9 @@ class AppController {
   handleSearchKeyPress(e) { if (e.key === 'Enter') this.searchAndRoute(); }
 }
 
-const app = new AppController();
-window.onload = () => app.init();
+// Instanciar únicamente cuando todo el HTML (DOM) haya cargado
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+  app = new AppController();
+  app.init();
+});
