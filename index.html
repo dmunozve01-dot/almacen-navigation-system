@@ -21,10 +21,10 @@
     <h2>SmartWarehouse PWA</h2>
     <p>Navegación Interna y Mapeo Georreferenciado</p>
 
-    <!-- Botón Google OAuth -->
+    <!-- Botón Google OAuth (Reemplaza data-client_id con el tuyo cuando lo tengas) -->
     <div class="google-btn-wrapper">
       <div id="g_id_onload"
-           data-client_id="123456789012-abc123def456.apps.googleusercontent.com"
+           data-client_id="606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com"
            data-callback="handleCredentialResponse"
            data-auto_prompt="false">
       </div>
@@ -38,24 +38,42 @@
       </div>
     </div>
 
-    <!-- Opción Mantener Sesión (sessionStorage vs localStorage) -->
+    <!-- Opción Mantener Sesión -->
     <div class="remember-option">
       <input type="checkbox" id="rememberMe">
-      <label for="rememberMe">Mantener sesión iniciada</label>
+      <label for="rememberMe">Mantener sesión iniciada en este dispositivo</label>
     </div>
 
     <div class="divider">ó</div>
 
-    <!-- Acceso Directo de Prueba para Operario -->
-    <button class="btn-secondary-login" onclick="loginDemo()">
+    <!-- Acceso Directo Demo Garantizado -->
+    <button class="btn-secondary-login" type="button" id="btnDemoLogin">
       <i class="fa-solid fa-user-gear"></i> Entrar como Operario Demo
     </button>
   </div>
 
-  <!-- Scripts: Seguridad, Configuración Encriptada, API y Autenticación -->
+  <!-- Scripts: Carga Secuencial Garantizada -->
   <script src="js/utils/crypto.js"></script>
   <script src="js/config.js"></script>
   <script src="js/services/apiService.js"></script>
   <script src="js/auth.js"></script>
+
+  <script>
+    // Listener explícito para evitar fallos de ejecución en el botón Demo
+    document.getElementById('btnDemoLogin').addEventListener('click', function() {
+      if (typeof loginDemo === 'function') {
+        loginDemo();
+      } else {
+        // Fallback directo si no ha cargado auth.js
+        const demoUser = {
+          name: "Operario Almacén",
+          email: "operario@almacen.com",
+          picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+        };
+        sessionStorage.setItem('sw_session_user', JSON.stringify(demoUser));
+        window.location.assign('app.html');
+      }
+    });
+  </script>
 </body>
 </html>
