@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SmartWarehouse - Dashboard GPS</title>
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet CSS (Requerido para que el mapa renderice correctamente) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <!-- FontAwesome Iconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Estilos Globales -->
+  <!-- Estilos Personalizados -->
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
 
   <div class="app-layout">
-    <!-- Panel Lateral / Menú Inferior en Celulares -->
+    <!-- Panel Lateral / Inferior en Celular -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="user-profile">
@@ -109,21 +109,22 @@
       </section>
     </aside>
 
-    <!-- Mapa Principal -->
+    <!-- Contenedor del Mapa Principal -->
     <main class="map-viewport">
       <div id="map"></div>
     </main>
   </div>
 
-  <!-- Scripts JavaScript -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Scripts del Sistema -->
   <script src="js/config.js"></script>
   <script src="js/data/storeRepository.js"></script>
   <script src="js/services/gpsService.js"></script>
   <script src="js/controllers/appController.js"></script>
 
   <script>
-    // Recuperación de sesión
+    // Control de sesión
     const sessionUser = JSON.parse(localStorage.getItem('sw_session_user'));
     if (!sessionUser) {
       window.location.assign('index.html');

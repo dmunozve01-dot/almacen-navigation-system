@@ -54,7 +54,7 @@ html, body {
   width: 100%; padding: 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
 }
 
-/* APP ESQUEMA ESCRITORIO */
+/* APP LAYOUT - DESKTOP */
 .app-layout { 
   display: flex; 
   height: 100vh; 
@@ -77,8 +77,22 @@ html, body {
   box-shadow: 2px 0 10px rgba(0,0,0,0.05);
 }
 
-.map-viewport { flex: 1; height: 100%; position: relative; }
-#map { width: 100%; height: 100%; z-index: 1; }
+.map-viewport { 
+  flex: 1; 
+  height: 100%; 
+  width: 100%;
+  position: relative;
+  background: #e5e3df; /* Color de fondo por defecto de mapa */
+}
+
+#map { 
+  width: 100% !important; 
+  height: 100% !important; 
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1; 
+}
 
 .user-profile {
   display: flex; align-items: center; gap: 10px; background: #f1f5f9;
@@ -133,23 +147,29 @@ input[type="text"], select { width: 100%; padding: 9px; border: 1px solid var(--
 .gps-animated-route { stroke-dasharray: 8, 8; animation: dash 1s linear infinite; }
 @keyframes dash { to { stroke-dashoffset: -16; } }
 
-/* VISTA ADAPTATIVA PARA CELULARES */
+/* VISTA ADAPTATIVA PARA CELULARES Y TABLETS */
 @media screen and (max-width: 768px) {
   .app-layout {
-    flex-direction: column-reverse;
+    display: flex;
+    flex-direction: column-reverse; /* El mapa queda en la parte superior */
+    height: 100vh;
+    width: 100vw;
   }
 
   .map-viewport {
-    height: 55vh;
-    width: 100%;
+    height: 52vh !important; /* Altura calculada para el mapa en móvil */
+    width: 100vw !important;
+    position: relative;
+    flex: none;
   }
 
   .sidebar {
-    width: 100%;
-    height: 45vh;
+    width: 100vw;
+    height: 48vh !important; /* Altura para el panel inferior */
     border-right: none;
     border-top: 2px solid var(--border-color);
     padding: 12px;
+    flex: none;
   }
 
   .btn {
