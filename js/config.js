@@ -7,16 +7,18 @@ const APP_CONFIG = {
   
   SECRET_PASS: "sw_trujillo_2026_key",
 
+  // Coordenadas del centro del almacén
   STAGING_LOCATION: {
     lat: -8.141639,
     lng: -79.014833,
-    zoom: 19
+    zoom: 20 // Zoom más cercano para ver el interior
   },
 
+  // Imagen del plano y sus límites (Coordenadas de las esquinas)
   OVERLAY_IMAGE_URL: "../assets/plano_almacen.jpeg",
   OVERLAY_BOUNDS: [
-    [-8.141900, -79.015150],
-    [-8.141380, -79.014500]
+    [-8.141900, -79.015150], // Esquina superior izquierda del techo
+    [-8.141380, -79.014500]  // Esquina inferior derecha del techo
   ],
 
   MAP_TILE_PROVIDER: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
