@@ -1,9 +1,11 @@
 /**
- * REPOSITORIO SIMPLIFICADO DE SLOTS
+ * REPOSITORIO DE DATOS PURO CON GOOGLE SHEETS
+ * (Sin uso de localStorage)
  */
 class StoreRepository {
   constructor() {
-    this.rawInitialData = [
+    // Datos de inicialización por defecto (Fallback en memoria)
+    this.memoryData = [
       { code: "STAGING", name: "Staging Area Pallets", zone: "STAGING", lat: -8.141639, lng: -79.014833 },
       { code: "1730", name: "Slot Virú", zone: "ZONA VIRÚ", lat: -8.141450, lng: -79.015000 },
       { code: "1770", name: "Slot Chicama", zone: "ZONA CHICAMA", lat: -8.141450, lng: -79.014650 },
@@ -14,27 +16,58 @@ class StoreRepository {
     ];
   }
 
+  /**
+   * Carga los slots directamente desde Google Sheets.
+   */
+  async loadFromCloud() {
+    if (typeof apiService !== 'undefined') {
+      const cloudSlots = await apiService.getSlots();
+      if (cloudSlots && cloudSlots.length > 0) {
+        this.memoryData = cloudSlots;
+        return cloudSlots;
+      }
+    }
+    return this.memoryData;
+  }
+
+  /**
+   * Retorna los datos actualmente cargados en memoria.
+   */
   getAll() {
-    const saved = localStorage.getItem(APP_CONFIG.STORAGE_KEY);
-    return saved ? JSON.parse(saved) : (this.saveAll(this.rawInitialData), this.rawInitialData);
+    return this.memoryData;
   }
 
-  saveAll(list) {
-    localStorage.setItem(APP_CONFIG.STORAGE_KEY, JSON.stringify(list));
-  }
-
+  /**
+   * Guarda o actualiza un Slot directo en Google Sheets y actualiza la memoria.
+   */
   saveOrUpdate(slot) {
-    const list = this.getAll();
-    const idx = list.findIndex(i => i.code === slot.code);
-    idx !== -1 ? list[idx] = { ...list[idx], ...slot } : list.push(slot);
-    this.saveAll(list);
-    return list;
+    const idx = this.memoryData.findIndex(i => i.code === slot.code);
+    if (idx !== -1) {
+      this.memoryData[idx] = { ...this.memoryData[idx], ...slot };
+    } else {
+      this.memoryData.push(slot);
+    }
+
+    // Persistencia directa en Google Sheets
+    if (typeof apiService !== 'undefined') {
+      apiService.saveSlot(slot);
+    }
+
+    return this.memoryData;
   }
 
+  /**
+   * Elimina un Slot en Google Sheets y en la memoria local.
+   */
   delete(index) {
-    const list = this.getAll();
-    list.splice(index, 1);
-    this.saveAll(list);
-    return list;
+    const deletedSlot = this.memoryData[index];
+    this.memoryData.splice(index, 1);
+
+    // Eliminación en Google Sheets
+    if (deletedSlot && typeof apiService !== 'undefined') {
+      apiService.deleteSlot(deletedSlot.code);
+    }
+
+    return this.memoryData;
   }
 }

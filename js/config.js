@@ -1,5 +1,6 @@
 const APP_CONFIG = {
   // Coordenadas fijas del Staging Area (Centro de la Nave)
+  API_URL: "https://script.google.com/macros/s/AKfycbzOY4dv23XTrj2Hsn4WX1PYZjZz1hpCmWUOB3Fj2wHPvBveF3zkSCC5vS1xW2a4-zGr/exec",
   STAGING_LOCATION: { lat: -8.141639, lng: -79.014833, zoom: 19 },
 
   // Imagen del plano del almacén

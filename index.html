@@ -3,96 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SmartWarehouse - Login</title>
+  <title>SmartWarehouse - Iniciar Sesión</title>
 
-  <!-- FontAwesome Iconos -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <!-- Google Identity Services Library -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- FontAwesome Iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <!-- Estilos Globales -->
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body class="login-body">
 
-  <main class="login-card">
+  <div class="login-card">
     <div class="brand-logo">
-      <i class="fa-solid fa-boxes-stacked"></i>
+      <i class="fa-solid fa-warehouse"></i>
     </div>
-    <h2>SmartWarehouse GPS</h2>
-    <p>Acceso al Almacén Central<br><strong>(8°08'29.9"S 79°00'53.4"W)</strong></p>
+    <h2>SmartWarehouse PWA</h2>
+    <p>Navegación Interna y Mapeo Georreferenciado</p>
 
-    <!-- Botón Oficial de Google -->
-    <div id="googleBtnContainer" class="google-btn-wrapper"></div>
-
-    <div class="divider">
-      <span>o</span>
+    <!-- Botón Google OAuth -->
+    <div class="google-btn-wrapper">
+      <div id="g_id_onload"
+           data-client_id="123456789012-abc123def456.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin" 
+           data-type="standard" 
+           data-shape="rectangular" 
+           data-theme="outline" 
+           data-text="signin_with" 
+           data-size="large" 
+           data-logo_alignment="left">
+      </div>
     </div>
 
-    <!-- Botón Demo / Invitado -->
-    <button class="btn btn-secondary-login" onclick="bypassLogin()">
-      <i class="fa-solid fa-user"></i> Continuar como Invitado / Operario
+    <!-- Opción Mantener Sesión (sessionStorage vs localStorage) -->
+    <div class="remember-option">
+      <input type="checkbox" id="rememberMe">
+      <label for="rememberMe">Mantener sesión iniciada en este dispositivo</label>
+    </div>
+
+    <div class="divider">ó</div>
+
+    <!-- Acceso Directo de Prueba para Operario -->
+    <button class="btn-secondary-login" onclick="loginDemo()">
+      <i class="fa-solid fa-user-gear"></i> Entrar como Operario Demo
     </button>
-  </main>
+  </div>
 
+  <!-- Scripts de Configuración, API Sheets y Autenticación -->
   <script src="js/config.js"></script>
-  <script>
-    window.onload = function() {
-      // Redirigir automáticamente si ya existe una sesión activa
-      const activeSession = localStorage.getItem('sw_session_user');
-      if (activeSession) {
-        window.location.assign('app.html');
-        return;
-      }
-
-      if (window.google) {
-        google.accounts.id.initialize({
-          client_id: APP_CONFIG.GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse
-        });
-
-        google.accounts.id.renderButton(
-          document.getElementById("googleBtnContainer"),
-          { theme: "outline", size: "large", text: "signin_with", shape: "rectangular", width: 280 }
-        );
-      }
-    };
-
-    function handleCredentialResponse(response) {
-      try {
-        if (!response.credential) return;
-
-        const userData = parseJwt(response.credential);
-        const sessionUser = {
-          name: userData.name || userData.email.split('@')[0],
-          email: userData.email,
-          picture: userData.picture || ''
-        };
-        
-        localStorage.setItem('sw_session_user', JSON.stringify(sessionUser));
-        window.location.assign('app.html');
-      } catch (error) {
-        console.error("Error al procesar login:", error);
-      }
-    }
-
-    function parseJwt(token) {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      return JSON.parse(jsonPayload);
-    }
-
-    function bypassLogin() {
-      const demoUser = {
-        name: "Operario Almacén",
-        email: "operario@almacen.com",
-        picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-      };
-      localStorage.setItem('sw_session_user', JSON.stringify(demoUser));
-      window.location.assign('app.html');
-    }
-  </script>
+  <script src="js/services/apiService.js"></script>
+  <script src="js/auth.js"></script>
 </body>
 </html>
