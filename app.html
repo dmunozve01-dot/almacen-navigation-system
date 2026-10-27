@@ -73,5 +73,18 @@
   <script src="./js/data/storeRepository.js"></script>
   <script src="./js/auth.js"></script>
   <script src="./js/ui/appController.js"></script>
+
+  <!-- SCRIPT DE SEGURIDAD: Bloquear el botón "Atrás" en el mapa -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const user = sessionStorage.getItem('sw_user') || localStorage.getItem('sw_user');
+      if (user) {
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+          history.go(1); 
+        };
+      }
+    });
+  </script>
 </body>
 </html>

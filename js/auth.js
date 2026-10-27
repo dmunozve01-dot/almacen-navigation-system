@@ -1,4 +1,4 @@
-// Variables globales
+// Variables globales para Google
 window.handleCredentialResponse = function(response) {
   const payload = parseJwt(response.credential);
   saveUserSession({ name: payload.name, email: payload.email, picture: payload.picture });
@@ -8,27 +8,36 @@ function checkSessionAndLoadUI() {
   const user = JSON.parse(sessionStorage.getItem('sw_user')) || JSON.parse(localStorage.getItem('sw_user'));
   if (!user) { window.location.href = 'index.html'; return; }
 
-  document.getElementById('userName').innerText = user.name;
-  document.getElementById('userEmail').innerText = user.email;
-  if(user.picture) document.getElementById('userAvatar').src = user.picture;
+  const nameEl = document.getElementById('userName');
+  const emailEl = document.getElementById('userEmail');
+  const avatarEl = document.getElementById('userAvatar');
 
-  // Activar botón salir
-  document.getElementById('btnLogout').addEventListener('click', () => {
-    sessionStorage.removeItem('sw_user');
-    localStorage.removeItem('sw_user');
-    window.location.href = 'index.html';
-  });
+  if (nameEl) nameEl.innerText = user.name;
+  if (emailEl) emailEl.innerText = user.email;
+  if (avatarEl && user.picture) avatarEl.src = user.picture;
+
+  // Configuración segura del botón Salir
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', () => {
+      sessionStorage.removeItem('sw_user');
+      localStorage.removeItem('sw_user');
+      // El replace borra la página actual del historial (no se puede volver atrás)
+      window.location.replace('index.html'); 
+    });
+  }
 
   // Mostrar Admin si aplica
   if (user.role === 'ADMIN') {
-    document.getElementById('btnAdmin').classList.remove('hidden');
+    const btnAdmin = document.getElementById('btnAdmin');
+    if (btnAdmin) btnAdmin.classList.remove('hidden');
   }
 }
 
 async function saveUserSession(userData) {
   const remember = document.getElementById('rememberMe')?.checked || false;
-  
   let role = "USER";
+  
   if (typeof apiService !== 'undefined') {
     role = await apiService.getUserRole(userData.email);
     userData.role = role;
@@ -38,7 +47,8 @@ async function saveUserSession(userData) {
   if (remember) localStorage.setItem('sw_user', JSON.stringify(userData));
   else sessionStorage.setItem('sw_user', JSON.stringify(userData));
 
-  window.location.href = 'app.html';
+  // Usamos replace para que no quede el login en el historial
+  window.location.replace('app.html');
 }
 
 function parseJwt(token) {
