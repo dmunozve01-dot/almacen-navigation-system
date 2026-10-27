@@ -1,56 +1,40 @@
 /**
- * REPOSITORIO DE DATOS Y MANEJO DE ANTIDUPLICADOS
+ * REPOSITORIO SIMPLIFICADO DE SLOTS
  */
 class StoreRepository {
   constructor() {
     this.rawInitialData = [
-      { code: "1263", name: "BUENOS3 TRU", zone: "ZONA TRUJILLO", lat: -8.1130, lng: -79.0300 },
-      { code: "1264", name: "PALMA8 TRU", zone: "ZONA TRUJILLO", lat: -8.1150, lng: -79.0280 },
-      { code: "1835", name: "MIRAF22 CHB", zone: "ZONA CHIMBOTE A", lat: -9.0744, lng: -78.5936 },
-      { code: "1770", name: "PROGRE3 TRU", zone: "ZONA CHICAMA", lat: -7.8420, lng: -79.1410 },
-      { code: "1730", name: "VIRU20 TRU", zone: "ZONA VIRÚ", lat: -8.4167, lng: -78.8000 },
-      { code: "1268", name: "MOCHE8 TRU", zone: "ZONA TRUJILLO", lat: -8.1691, lng: -79.0094 },
-      { code: "1723", name: "RAMONG1 TRU", zone: "ZONA TRUJILLO", lat: -8.1116, lng: -79.0286 },
-      { code: "1615", name: "PRADA O13 TRU", zone: "ZONA VIRÚ", lat: -8.4180, lng: -78.8020 }
+      { code: "STAGING", name: "Staging Area Pallets", zone: "STAGING", lat: -8.141639, lng: -79.014833 },
+      { code: "1730", name: "Slot Virú", zone: "ZONA VIRÚ", lat: -8.141450, lng: -79.015000 },
+      { code: "1770", name: "Slot Chicama", zone: "ZONA CHICAMA", lat: -8.141450, lng: -79.014650 },
+      { code: "1835", name: "Slot Chimbote A", zone: "ZONA CHIMBOTE A", lat: -8.141600, lng: -79.014950 },
+      { code: "1840", name: "Slot Chimbote B", zone: "ZONA CHIMBOTE B", lat: -8.141600, lng: -79.014700 },
+      { code: "1263", name: "Slot Trujillo", zone: "ZONA TRUJILLO", lat: -8.141750, lng: -79.014850 },
+      { code: "PICK-01", name: "Mesa Picking", zone: "PICKING GENERAL", lat: -8.141850, lng: -79.014800 }
     ];
   }
 
   getAll() {
     const saved = localStorage.getItem(APP_CONFIG.STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    
-    // Antiduplicados inicial por código único
-    const cleanMap = new Map();
-    this.rawInitialData.forEach(item => cleanMap.set(item.code, item));
-    const cleanList = Array.from(cleanMap.values());
-    this.saveAll(cleanList);
-    return cleanList;
+    return saved ? JSON.parse(saved) : (this.saveAll(this.rawInitialData), this.rawInitialData);
   }
 
   saveAll(list) {
     localStorage.setItem(APP_CONFIG.STORAGE_KEY, JSON.stringify(list));
   }
 
-  saveOrUpdate(waypoint) {
-    const currentList = this.getAll();
-    const existingIndex = currentList.findIndex(item => item.code === waypoint.code);
-
-    if (existingIndex !== -1) {
-      currentList[existingIndex] = { ...currentList[existingIndex], ...waypoint };
-    } else {
-      currentList.push(waypoint);
-    }
-
-    this.saveAll(currentList);
-    return currentList;
+  saveOrUpdate(slot) {
+    const list = this.getAll();
+    const idx = list.findIndex(i => i.code === slot.code);
+    idx !== -1 ? list[idx] = { ...list[idx], ...slot } : list.push(slot);
+    this.saveAll(list);
+    return list;
   }
 
   delete(index) {
-    const currentList = this.getAll();
-    currentList.splice(index, 1);
-    this.saveAll(currentList);
-    return currentList;
+    const list = this.getAll();
+    list.splice(index, 1);
+    this.saveAll(list);
+    return list;
   }
 }

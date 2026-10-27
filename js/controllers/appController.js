@@ -1,150 +1,127 @@
 /**
- * CONTROLADOR PRINCIPAL Y ORQUESTRADOR DEL MAPA
+ * CONTROLADOR CON GPS EN VIVO HABILITADO
  */
 class AppController {
   constructor() {
     this.storeRepo = new StoreRepository();
     this.gpsService = new GPSService();
-
     this.map = null;
-    this.warehouseMarker = null;
-    this.userMarker = null;
     this.routePolyline = null;
-    this.selectedAdminCoords = null;
-    this.tempAdminMarker = null;
+    this.selectedCoords = null;
+    this.tempMarker = null;
+    this.userMarker = null;
     this.markersMap = {};
     this.waypoints = [];
   }
 
   init() {
-    const mapDiv = document.getElementById('map');
-    if (!mapDiv) return;
-
+    if (!document.getElementById('map')) return;
     this.initMap();
     this.waypoints = this.storeRepo.getAll();
-    this.renderWaypointsOnMap();
+    this.renderWaypoints();
 
+    // RASTREO GPS EN TIEMPO REAL REACTIVADO
     this.gpsService.startTracking(
-      (pos) => this.onGPSUpdate(pos),
-      (err) => console.warn("GPS Error:", err)
+      pos => this.onGPS(pos),
+      err => {
+        console.warn("GPS no disponible:", err);
+        const el = document.getElementById('gpsStatusText');
+        if (el) el.innerText = "GPS no disponible - Usando Staging Base";
+      }
     );
   }
 
   initMap() {
-    const whLat = APP_CONFIG.WAREHOUSE_LOCATION.lat;
-    const whLng = APP_CONFIG.WAREHOUSE_LOCATION.lng;
-    const zoom = APP_CONFIG.WAREHOUSE_LOCATION.zoom;
+    const { lat, lng, zoom } = APP_CONFIG.STAGING_LOCATION;
+    if (this.map) this.map.remove();
 
-    // Si el mapa ya estaba inicializado, lo eliminamos primero
-    if (this.map) {
-      this.map.remove();
-    }
+    this.map = L.map('map', { zoomControl: true, attributionControl: false }).setView([lat, lng], zoom);
 
-    this.map = L.map('map').setView([whLat, whLng], zoom);
+    // Mapa satelital/calles de fondo
+    L.tileLayer(APP_CONFIG.MAP_TILE_PROVIDER, { maxZoom: 21 }).addTo(this.map);
 
-    // Servidor de mapas OpenStreetMap
-    L.tileLayer(APP_CONFIG.MAP_TILE_PROVIDER, { 
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(this.map);
+    // Overlay del croquis del almacén
+    L.imageOverlay(
+      APP_CONFIG.OVERLAY_IMAGE_URL,
+      APP_CONFIG.OVERLAY_BOUNDS,
+      { opacity: 0.88, interactive: true }
+    ).addTo(this.map);
 
-    // Marcador Fijo del Almacén Central
-    const whIcon = L.divIcon({
-      className: 'warehouse-icon',
-      html: `<div style="background:#dc2626; color:white; font-size:11px; font-weight:bold; padding:4px 8px; border-radius:4px; border:2px solid white; box-shadow:0 2px 6px rgba(0,0,0,0.4); text-align:center; white-space:nowrap;">🏬 ALMACÉN CENTRAL</div>`
+    // Marcador Fijo del Staging
+    const stagingIcon = L.divIcon({
+      className: 'staging-icon',
+      html: `<div style="background:#dc2626; color:white; font-size:10px; font-weight:bold; padding:3px 6px; border-radius:4px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.4); text-align:center;">📦 STAGING</div>`
     });
+    L.marker([lat, lng], { icon: stagingIcon }).addTo(this.map).bindPopup("<b>Staging Area</b>");
 
-    this.warehouseMarker = L.marker([whLat, whLng], { icon: whIcon }).addTo(this.map);
-    this.warehouseMarker.bindPopup(`<b>Almacén Central</b><br>Coordenadas: 8°08'29.9"S 79°00'53.4"W`);
-
-    this.map.on('click', (e) => this.onMapClick(e));
-
-    // REAJUSTAR TAMAÑO DEL LIENZO
-    setTimeout(() => {
-      if (this.map) {
-        this.map.invalidateSize();
-      }
-    }, 300);
+    this.map.on('click', e => this.onClick(e));
+    setTimeout(() => this.map && this.map.invalidateSize(), 300);
   }
 
-  centerMapOnWarehouse() {
-    if (!this.map) return;
-    this.map.setView(
-      [APP_CONFIG.WAREHOUSE_LOCATION.lat, APP_CONFIG.WAREHOUSE_LOCATION.lng],
-      APP_CONFIG.WAREHOUSE_LOCATION.zoom
-    );
-    this.warehouseMarker.openPopup();
-  }
-
-  onGPSUpdate(pos) {
-    const statusText = document.getElementById('gpsStatusText');
-    if (statusText) {
-      statusText.innerText = `Ubicación Activa: (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)})`;
-    }
+  onGPS(pos) {
+    const el = document.getElementById('gpsStatusText');
+    if (el) el.innerText = `GPS Activo (${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)})`;
 
     if (!this.map) return;
 
+    // Actualiza o crea el punto azul del operario en vivo
     if (!this.userMarker) {
-      const userIcon = L.divIcon({
-        className: 'user-gps-icon',
-        html: `<div style="width:18px; height:18px; background:#2563eb; border:2px solid white; border-radius:50%; box-shadow:0 0 8px rgba(0,0,0,0.4);"></div>`
+      const icon = L.divIcon({
+        className: 'user-icon',
+        html: `<div style="width:16px; height:16px; background:#2563eb; border:2px solid white; border-radius:50%; box-shadow:0 0 8px rgba(0,0,0,0.6);"></div>`
       });
-      this.userMarker = L.marker([pos.lat, pos.lng], { icon: userIcon }).addTo(this.map);
-      this.userMarker.bindPopup("<b>Ubicación del Operario / Almacén</b>");
+      this.userMarker = L.marker([pos.lat, pos.lng], { icon }).addTo(this.map);
+      this.userMarker.bindPopup("<b>Tu Ubicación (GPS)</b>");
     } else {
       this.userMarker.setLatLng([pos.lat, pos.lng]);
     }
   }
 
-  onMapClick(e) {
-    const isAdmin = document.getElementById('btnAdmin').classList.contains('active');
-    if (isAdmin) {
-      this.selectedAdminCoords = e.latlng;
-      document.getElementById('adminCoordsBox').innerText = `Lat: ${e.latlng.lat.toFixed(5)}, Lng: ${e.latlng.lng.toFixed(5)}`;
-      if (this.tempAdminMarker) this.map.removeLayer(this.tempAdminMarker);
-      this.tempAdminMarker = L.marker(e.latlng).addTo(this.map);
-    }
+  centerMapOnWarehouse() {
+    const { lat, lng, zoom } = APP_CONFIG.STAGING_LOCATION;
+    if (this.map) this.map.setView([lat, lng], zoom);
+  }
+
+  onClick(e) {
+    if (!document.getElementById('btnAdmin').classList.contains('active')) return;
+    this.selectedCoords = e.latlng;
+    document.getElementById('adminCoordsBox').innerText = `Lat: ${e.latlng.lat.toFixed(5)}, Lng: ${e.latlng.lng.toFixed(5)}`;
+    if (this.tempMarker) this.map.removeLayer(this.tempMarker);
+    this.tempMarker = L.marker(e.latlng).addTo(this.map);
   }
 
   useCurrentGPSForAdmin() {
     const pos = this.gpsService.getCurrentPosition();
     if (pos) {
-      this.selectedAdminCoords = pos;
-      document.getElementById('adminCoordsBox').innerText = `Lat: ${pos.lat.toFixed(5)}, Lng: ${pos.lng.toFixed(5)} (Mi GPS)`;
-      if (this.tempAdminMarker) this.map.removeLayer(this.tempAdminMarker);
-      this.tempAdminMarker = L.marker([pos.lat, pos.lng]).addTo(this.map);
+      this.selectedCoords = pos;
+      document.getElementById('adminCoordsBox').innerText = `Mi GPS: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`;
+      if (this.tempMarker) this.map.removeLayer(this.tempMarker);
+      this.tempMarker = L.marker([pos.lat, pos.lng]).addTo(this.map);
     }
   }
 
   searchAndRoute() {
     const query = document.getElementById('searchInput').value.trim().toUpperCase();
     const target = this.waypoints.find(w => w.code === query);
-    const userPos = this.gpsService.getCurrentPosition() || APP_CONFIG.WAREHOUSE_LOCATION;
+    const userPos = this.gpsService.getCurrentPosition() || APP_CONFIG.STAGING_LOCATION;
 
-    if (!target) return alert(`La posición o tienda ${query} no se encuentra mapeada.`);
+    if (!target) return alert(`Slot ${query} no encontrado.`);
 
     this.clearCurrentRoute();
-
     const start = [userPos.lat, userPos.lng];
     const end = [target.lat, target.lng];
 
-    this.routePolyline = L.polyline([start, end], {
-      color: '#2563eb', weight: 5, className: 'gps-animated-route'
-    }).addTo(this.map);
-
+    this.routePolyline = L.polyline([start, end], { color: '#2563eb', weight: 5, className: 'gps-animated-route' }).addTo(this.map);
     this.map.fitBounds(this.routePolyline.getBounds(), { padding: [40, 40] });
 
-    const distMeters = this.map.distance(start, end);
+    const dist = Math.round(this.map.distance(start, end));
     document.getElementById('routeInfoCard').classList.remove('hidden');
-    document.getElementById('routeDist').innerText = distMeters > 1000 ? `${(distMeters / 1000).toFixed(2)} km` : `${Math.round(distMeters)} m`;
+    document.getElementById('routeDist').innerText = `${dist} metros`;
     document.getElementById('routeTarget').innerText = `${target.code} (${target.zone})`;
   }
 
   clearCurrentRoute() {
-    if (this.routePolyline && this.map) {
-      this.map.removeLayer(this.routePolyline);
-      this.routePolyline = null;
-    }
+    if (this.routePolyline && this.map) this.map.removeLayer(this.routePolyline);
     document.getElementById('routeInfoCard').classList.add('hidden');
   }
 
@@ -152,22 +129,17 @@ class AppController {
     const code = document.getElementById('adminCodeInput').value.trim().toUpperCase();
     const zone = document.getElementById('adminZoneSelect').value;
 
-    if (!this.selectedAdminCoords || !code) return alert("Selecciona un punto en el mapa e ingresa un código.");
+    if (!this.selectedCoords || !code) return alert("Selecciona una posición e ingresa el código.");
 
-    const newWp = {
-      code,
-      name: `TIENDA ${code}`,
-      zone,
-      lat: this.selectedAdminCoords.lat,
-      lng: this.selectedAdminCoords.lng
-    };
+    this.waypoints = this.storeRepo.saveOrUpdate({
+      code, name: `SLOT ${code}`, zone, lat: this.selectedCoords.lat, lng: this.selectedCoords.lng
+    });
 
-    this.waypoints = this.storeRepo.saveOrUpdate(newWp);
-    this.renderWaypointsOnMap();
-    alert(`Posición ${code} guardada correctamente.`);
+    this.renderWaypoints();
+    alert(`Slot ${code} guardado.`);
   }
 
-  renderWaypointsOnMap() {
+  renderWaypoints() {
     if (!this.map) return;
     Object.values(this.markersMap).forEach(m => this.map.removeLayer(m));
     this.markersMap = {};
@@ -181,7 +153,7 @@ class AppController {
       const marker = L.marker([wp.lat, wp.lng], {
         icon: L.divIcon({
           className: 'wp-icon',
-          html: `<div style="background:#059669; color:white; font-size:10px; padding:2px 5px; border-radius:3px; font-weight:bold;">${wp.code}</div>`
+          html: `<div style="background:#059669; color:white; font-size:10px; padding:2px 5px; border-radius:3px; font-weight:bold;">📍 ${wp.code}</div>`
         })
       }).addTo(this.map);
 
@@ -198,7 +170,7 @@ class AppController {
 
   deleteWp(idx) {
     this.waypoints = this.storeRepo.delete(idx);
-    this.renderWaypointsOnMap();
+    this.renderWaypoints();
   }
 
   setRole(role) {
@@ -206,16 +178,12 @@ class AppController {
     document.getElementById('btnUser').classList.toggle('active', role === 'user');
     document.getElementById('adminPanel').classList.toggle('active', role === 'admin');
     document.getElementById('userPanel').classList.toggle('active', role === 'user');
-
-    setTimeout(() => {
-      if (this.map) this.map.invalidateSize();
-    }, 200);
+    setTimeout(() => this.map && this.map.invalidateSize(), 200);
   }
 
   handleSearchKeyPress(e) { if (e.key === 'Enter') this.searchAndRoute(); }
 }
 
-// Instanciar únicamente cuando todo el HTML (DOM) haya cargado
 let app;
 document.addEventListener('DOMContentLoaded', () => {
   app = new AppController();
