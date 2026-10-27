@@ -3,7 +3,7 @@
  */
 
 // 1. Verificar sesión al cargar app.html
-window.checkAppSession = function() {
+function checkAppSession() {
   const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
                       JSON.parse(localStorage.getItem('sw_session_user'));
 
@@ -19,10 +19,10 @@ window.checkAppSession = function() {
   if (nameEl) nameEl.innerText = sessionUser.name || "Usuario";
   if (emailEl) emailEl.innerText = sessionUser.email || "Sin correo";
   if (avatarEl && sessionUser.picture) avatarEl.src = sessionUser.picture;
-};
+}
 
-// 2. Callback de Google (Se llama automáticamente desde index.html)
-window.handleCredentialResponse = function(response) {
+// 2. Callback de Google (llamado desde index.html)
+function handleCredentialResponse(response) {
   const payload = parseJwt(response.credential);
   const userData = {
     name: payload.name,
@@ -30,46 +30,42 @@ window.handleCredentialResponse = function(response) {
     picture: payload.picture
   };
   saveUserSession(userData);
-};
+}
 
-// 3. Guardar sesión consultando el rol en Google Sheets
+// 3. Guardar sesión consultando el rol
 async function saveUserSession(userData) {
   const rememberEl = document.getElementById('rememberMe');
   const remember = rememberEl ? rememberEl.checked : false;
 
-  // Consultar Rol a Google Sheets (por defecto será USER)
   let role = "USER";
   if (typeof apiService !== 'undefined') {
     try {
       role = await apiService.getUserRole(userData.email);
       userData.role = role;
-      // Registra o actualiza al usuario en el Sheet
       apiService.syncUser(userData); 
     } catch (e) {
-      console.warn("No se pudo consultar el rol, usando USER por defecto.");
+      console.warn("No se pudo consultar el rol.");
       userData.role = "USER";
     }
   }
 
-  // Guardar en el navegador
   if (remember) {
     localStorage.setItem('sw_session_user', JSON.stringify(userData));
   } else {
     sessionStorage.setItem('sw_session_user', JSON.stringify(userData));
   }
 
-  // Redirigir al mapa
   window.location.assign('app.html');
 }
 
-// 4. Cerrar Sesión (Asegurado en window para que el botón HTML lo encuentre)
+// 4. Cerrar Sesión (Global)
 window.logout = function() {
   sessionStorage.removeItem('sw_session_user');
   localStorage.removeItem('sw_session_user');
   window.location.assign('index.html');
 };
 
-// 5. Aplicar visibilidad de Admin/User al cargar el dashboard
+// 5. Aplicar visibilidad de Admin/User (Global)
 window.applyUserRole = function() {
   const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
                       JSON.parse(localStorage.getItem('sw_session_user'));
@@ -80,7 +76,6 @@ window.applyUserRole = function() {
     if (btnAdmin) btnAdmin.classList.remove('hidden');
   } else {
     if (btnAdmin) btnAdmin.classList.add('hidden');
-    // Forzar vista de usuario si no es admin
     if (typeof app !== 'undefined' && app.setRole) {
       app.setRole('user');
     }
@@ -102,7 +97,7 @@ function parseJwt(token) {
   }
 }
 
-// 7. Lógica del Botón Demo (en index.html)
+// 7. Lógica del Botón Demo
 document.addEventListener('DOMContentLoaded', () => {
   const btnDemo = document.getElementById('btnDemoLogin');
   if (btnDemo) {

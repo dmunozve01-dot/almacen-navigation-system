@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SmartWarehouse - Iniciar Sesión</title>
 
-  <!-- Google Identity Services Library -->
+  <!-- Declarar callback global ANTES de cargar Google -->
+  <script>
+    window.handleCredentialResponse = function(response) {
+      if (typeof handleCredentialResponse === 'function') {
+        handleCredentialResponse(response);
+      }
+    };
+  </script>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- FontAwesome Iconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Estilos Globales -->
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="./css/main.css">
 </head>
 <body class="login-body">
 
@@ -21,7 +27,6 @@
     <h2>SmartWarehouse PWA</h2>
     <p>Navegación Interna y Mapeo Georreferenciado</p>
 
-    <!-- Botón Google OAuth -->
     <div class="google-btn-wrapper">
       <div id="g_id_onload"
            data-client_id="606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com"
@@ -38,54 +43,22 @@
       </div>
     </div>
 
-    <!-- Opción Mantener Sesión -->
     <div class="remember-option">
       <input type="checkbox" id="rememberMe">
-      <label for="rememberMe">Mantener sesión iniciada en este dispositivo</label>
+      <label for="rememberMe">Mantener sesión iniciada</label>
     </div>
 
     <div class="divider">ó</div>
 
-    <!-- Acceso Directo Demo Garantizado Sin Bloqueos -->
     <button class="btn-secondary-login" type="button" id="btnDemoLogin">
       <i class="fa-solid fa-user-gear"></i> Entrar como Operario Demo
     </button>
   </div>
 
-  <!-- Carga Secuencial de Scripts para Seguridad y Sincronización -->
-  <script src="js/utils/crypto.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/services/apiService.js"></script>
-  <script src="js/auth.js"></script>
-
-  <script>
-    // Manejo directo del botón de acceso Demo
-    document.getElementById('btnDemoLogin').addEventListener('click', function(e) {
-      e.preventDefault();
-      
-      const demoUser = {
-        name: "Operario Almacén",
-        email: "operario@almacen.com",
-        picture: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-      };
-
-      const remember = document.getElementById('rememberMe').checked;
-
-      // Guardar datos en la memoria correspondiente para evitar rebotar al cargar app.html
-      if (remember) {
-        localStorage.setItem('sw_session_user', JSON.stringify(demoUser));
-      } else {
-        sessionStorage.setItem('sw_session_user', JSON.stringify(demoUser));
-      }
-
-      // Sincronizar ingreso en Google Sheets en segundo plano
-      if (typeof apiService !== 'undefined') {
-        apiService.syncUser(demoUser);
-      }
-
-      // Redirección directa e inmediata a app.html
-      window.location.href = 'app.html';
-    });
-  </script>
+  <script src="./js/utils/crypto.js"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/services/apiService.js"></script>
+  <!-- RUTA CORREGIDA SEGÚN TU ESTRUCTURA -->
+  <script src="./js/services/authService.js"></script>
 </body>
 </html>

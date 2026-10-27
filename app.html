@@ -5,17 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SmartWarehouse - Dashboard GPS</title>
 
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <!-- FontAwesome Iconos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <!-- Estilos Globales -->
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
 
   <div class="app-layout">
-    <!-- Panel Lateral / Control Inferior Móvil -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="user-profile">
@@ -24,25 +20,21 @@
             <strong id="userName">Operario</strong>
             <span id="userEmail" class="email">operario@almacen.com</span>
           </div>
-          <!-- BOTÓN SALIR CORREGIDO -->
           <button class="btn-logout" onclick="window.logout()" title="Cerrar Sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
       </div>
 
-      <!-- Control de Rol / Pestañas -->
       <div class="mode-switch">
         <button id="btnUser" class="btn-tab active" onclick="app.setRole('user')">
           <i class="fa-solid fa-route"></i> Navegar
         </button>
-        <!-- Botón Admin (oculto por defecto) -->
         <button id="btnAdmin" class="btn-tab hidden" onclick="app.setRole('admin')">
           <i class="fa-solid fa-user-gear"></i> Mapear Admin
         </button>
       </div>
 
-      <!-- Panel del Operario -->
       <section id="userPanel" class="panel active">
         <div class="card card-gps">
           <h3><i class="fa-solid fa-satellite-dish"></i> Estado GPS Operario</h3>
@@ -77,14 +69,13 @@
         </div>
       </section>
 
-      <!-- Panel Mapeo Admin -->
       <section id="adminPanel" class="panel">
         <div class="card">
           <h3><i class="fa-solid fa-map-pin"></i> Mapear Posición Exacta</h3>
           <button class="btn btn-secondary" onclick="app.useCurrentGPSForAdmin()">
             <i class="fa-solid fa-location-dot"></i> Capturar Mi GPS
           </button>
-          <div class="coords-box" id="adminCoordsBox">Sin selección de coordenadas</div>
+          <div class="coords-box" id="adminCoordsBox">Sin selección</div>
           <div class="form-group">
             <label>Código de Slot / Tienda</label>
             <input type="text" id="adminCodeInput" placeholder="Ej: 1723">
@@ -108,34 +99,30 @@
         </div>
 
         <div class="card">
-          <h3><i class="fa-solid fa-list-check"></i> Slots Registrados (<span id="wpCount">0</span>)</h3>
+          <h3><i class="fa-solid fa-list-check"></i> Slots (<span id="wpCount">0</span>)</h3>
           <div id="waypointsList" class="wp-scroll-container"></div>
         </div>
       </section>
     </aside>
 
-    <!-- Contenedor del Mapa Leaflet -->
     <main class="map-viewport">
       <div id="map"></div>
     </main>
   </div>
 
-  <!-- JavaScript Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/utils/crypto.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/services/apiService.js"></script>
-  <script src="js/data/storeRepository.js"></script>
-  <script src="js/services/gpsService.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/controllers/appController.js"></script>
+  <script src="./js/utils/crypto.js"></script>
+  <script src="./js/config.js"></script>
+  <script src="./js/services/apiService.js"></script>
+  <script src="./js/data/storeRepository.js"></script>
+  <script src="./js/services/gpsService.js"></script>
+  <!-- RUTA CORREGIDA SEGÚN TU ESTRUCTURA -->
+  <script src="./js/services/authService.js"></script>
+  <script src="./js/controllers/appController.js"></script>
 
   <script>
-    // 1. Validar sesión del usuario al cargar la página
-    checkAppSession();
-    
-    // 2. Esperar a que el DOM esté listo para aplicar los roles (ocultar/mostrar admin)
     document.addEventListener('DOMContentLoaded', () => {
+      checkAppSession();
       setTimeout(applyUserRole, 150); 
     });
   </script>
