@@ -6,15 +6,11 @@ class APIService {
   async getUserRole(email) {
     const url = await this.getBaseUrl();
     if (!url) return "USER";
-
     try {
       const res = await fetch(`${url}?action=getUserRole&email=${encodeURIComponent(email)}`);
       const json = await res.json();
       return json.success ? json.role : "USER";
-    } catch (err) {
-      console.warn("Error consultando rol:", err);
-      return "USER";
-    }
+    } catch (err) { return "USER"; }
   }
 
   async syncUser(userData) {
@@ -26,20 +22,17 @@ class APIService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "saveUser", user: userData })
       });
-    } catch (err) { console.warn("Error enviando usuario:", err); }
+    } catch (err) { console.warn(err); }
   }
 
   async getSlots() {
     const url = await this.getBaseUrl();
-    if (!url) return null;
+    if (!url) return [];
     try {
       const res = await fetch(`${url}?action=getSlots`);
       const json = await res.json();
-      return json.success ? json.data : null;
-    } catch (err) {
-      console.warn("Error leyendo slots:", err);
-      return null;
-    }
+      return json.success ? json.data : [];
+    } catch (err) { return []; }
   }
 
   async saveSlot(slotData) {
@@ -51,19 +44,7 @@ class APIService {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "saveSlot", slot: slotData })
       });
-    } catch (err) { console.warn("Error guardando slot:", err); }
-  }
-
-  async deleteSlot(code) {
-    const url = await this.getBaseUrl();
-    if (!url) return;
-    try {
-      await fetch(url, {
-        method: "POST", mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "deleteSlot", code: code })
-      });
-    } catch (err) { console.warn("Error eliminando slot:", err); }
+    } catch (err) { console.warn(err); }
   }
 }
 const apiService = new APIService();

@@ -3,99 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SmartWarehouse - Dashboard GPS</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <title>SmartWarehouse - GPS</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="./css/main.css">
 </head>
 <body>
-
   <div class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="user-profile">
-          <img id="userAvatar" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Avatar" class="avatar">
+          <img id="userAvatar" src="" alt="Avatar" class="avatar">
           <div class="user-info">
-            <strong id="userName">Cargando...</strong>
+            <strong id="userName">...</strong>
             <span id="userEmail" class="email">...</span>
           </div>
-          <!-- Botón Salir con ID (sin onclick) -->
-          <button class="btn-logout" id="btnLogout" title="Cerrar Sesión">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
+          <button class="btn-logout" id="btnLogout"><i class="fa-solid fa-right-from-bracket"></i></button>
         </div>
       </div>
 
       <div class="mode-switch">
-        <button id="btnUser" class="btn-tab active"> <i class="fa-solid fa-route"></i> Navegar </button>
-        <button id="btnAdmin" class="btn-tab hidden"> <i class="fa-solid fa-user-gear"></i> Admin </button>
+        <button id="btnUser" class="btn-tab active"><i class="fa-solid fa-route"></i> Navegar</button>
+        <button id="btnAdmin" class="btn-tab hidden"><i class="fa-solid fa-user-gear"></i> Mapear (Admin)</button>
       </div>
 
       <section id="userPanel" class="panel active">
         <div class="card card-gps">
-          <h3><i class="fa-solid fa-satellite-dish"></i> Estado GPS Operario</h3>
+          <h3><i class="fa-solid fa-satellite-dish"></i> GPS</h3>
           <div class="status-indicator">
             <span class="pulse-dot"></span>
             <span id="gpsStatusText">Buscando GPS...</span>
           </div>
-          <button class="btn btn-secondary" id="btnCenterMap"> <i class="fa-solid fa-warehouse"></i> Enfocar Staging Area </button>
+          <button class="btn btn-secondary" id="btnCenterMap"><i class="fa-solid fa-warehouse"></i> Ir a Staging</button>
         </div>
-
         <div class="card">
-          <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Tienda / Slot</h3>
-          <div class="form-group">
-            <input type="text" id="searchInput" placeholder="Ej: 1615, 1723, STAGING">
-          </div>
-          <button class="btn btn-primary" id="btnSearchRoute"> <i class="fa-solid fa-diamond-turn-right"></i> Trazar Ruta GPS </button>
-          <button class="btn btn-danger-outline" id="btnClearRoute"> <i class="fa-solid fa-xmark"></i> Limpiar Ruta </button>
-        </div>
-
-        <div id="routeInfoCard" class="card card-route hidden">
-          <h3><i class="fa-solid fa-route"></i> Telemetría de Ruta</h3>
-          <div class="telemetry-grid">
-            <div><span>Distancia:</span> <strong id="routeDist">0 m</strong></div>
-            <div><span>Destino:</span> <strong id="routeTarget">-</strong></div>
-          </div>
+          <h3><i class="fa-solid fa-magnifying-glass"></i> Buscar Slot</h3>
+          <div class="form-group"><input type="text" id="searchInput" placeholder="Ej: 1730"></div>
+          <button class="btn btn-primary" id="btnSearchRoute"><i class="fa-solid fa-diamond-turn-right"></i> Trazar Ruta</button>
+          <button class="btn btn-danger-outline" id="btnClearRoute"><i class="fa-solid fa-xmark"></i> Limpiar Ruta</button>
         </div>
       </section>
 
       <section id="adminPanel" class="panel">
         <div class="card">
-          <h3><i class="fa-solid fa-map-pin"></i> Mapear Posición Exacta</h3>
-          <button class="btn btn-secondary" id="btnCaptureGPS"> <i class="fa-solid fa-location-dot"></i> Capturar Mi GPS </button>
-          <div class="coords-box" id="adminCoordsBox">Sin selección</div>
+          <h3><i class="fa-solid fa-map-pin"></i> Mapear Slot</h3>
+          <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Haz clic en el mapa para ubicar el slot.</p>
+          <div class="coords-box" id="adminCoordsBox">Lat: - , Lng: -</div>
+          <div class="form-group"><label>Código Slot</label><input type="text" id="adminCodeInput" placeholder="Ej: 1730"></div>
           <div class="form-group">
-            <label>Código de Slot / Tienda</label>
-            <input type="text" id="adminCodeInput" placeholder="Ej: 1723">
-          </div>
-          <div class="form-group">
-            <label>Zona Perteneciente</label>
+            <label>Zona</label>
             <select id="adminZoneSelect">
-              <option value="STAGING">STAGING CENTRAL</option>
+              <option value="STAGING">STAGING</option>
               <option value="ZONA VIRÚ">ZONA VIRÚ</option>
-              <option value="ZONA CHICAMA">ZONA CHICAMA</option>
               <option value="ZONA TRUJILLO">ZONA TRUJILLO</option>
             </select>
           </div>
-          <button class="btn btn-success" id="btnSaveWaypoint"> <i class="fa-solid fa-floppy-disk"></i> Guardar en Sheets </button>
-        </div>
-        <div class="card">
-          <h3><i class="fa-solid fa-list-check"></i> Slots (<span id="wpCount">0</span>)</h3>
-          <div id="waypointsList" class="wp-scroll-container"></div>
+          <button class="btn btn-success" id="btnSaveWaypoint"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
         </div>
       </section>
     </aside>
-
     <main class="map-viewport"><div id="map"></div></main>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="./js/utils/crypto.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./js/core/crypto.js"></script>
   <script src="./js/config.js"></script>
-  <script src="./js/services/apiService.js"></script>
+  <script src="./js/core/apiService.js"></script>
+  <script src="./js/core/gpsService.js"></script>
   <script src="./js/data/storeRepository.js"></script>
-  <script src="./js/services/gpsService.js"></script>
-  <script src="./js/services/authService.js"></script>
-  <script src="./js/controllers/appController.js"></script>
+  <script src="./js/auth.js"></script>
+  <script src="./js/ui/appController.js"></script>
 </body>
 </html>

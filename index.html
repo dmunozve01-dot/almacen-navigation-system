@@ -3,62 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SmartWarehouse - Iniciar Sesión</title>
-
-  <!-- Declarar callback global ANTES de cargar Google -->
+  <title>SmartWarehouse - Login</title>
   <script>
-    window.handleCredentialResponse = function(response) {
-      if (typeof handleCredentialResponse === 'function') {
-        handleCredentialResponse(response);
-      }
-    };
+    window.handleCredentialResponse = function(response) { if(typeof handleCredentialResponse === 'function') handleCredentialResponse(response); };
   </script>
-
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="./css/main.css">
 </head>
 <body class="login-body">
-
   <div class="login-card">
-    <div class="brand-logo">
-      <i class="fa-solid fa-warehouse"></i>
-    </div>
-    <h2>SmartWarehouse PWA</h2>
-    <p>Navegación Interna y Mapeo Georreferenciado</p>
+    <div class="brand-logo"><i class="fa-solid fa-warehouse"></i></div>
+    <h2>SmartWarehouse</h2>
+    <p>Ingreso al Sistema</p>
 
     <div class="google-btn-wrapper">
-      <div id="g_id_onload"
-           data-client_id="606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin" 
-           data-type="standard" 
-           data-shape="rectangular" 
-           data-theme="outline" 
-           data-text="signin_with" 
-           data-size="large" 
-           data-logo_alignment="left">
-      </div>
+      <div id="g_id_onload" data-client_id="606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+      <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large"></div>
     </div>
 
     <div class="remember-option">
       <input type="checkbox" id="rememberMe">
-      <label for="rememberMe">Mantener sesión iniciada</label>
+      <label for="rememberMe">Mantener sesión</label>
     </div>
-
-    <div class="divider">ó</div>
-
-    <button class="btn-secondary-login" type="button" id="btnDemoLogin">
-      <i class="fa-solid fa-user-gear"></i> Entrar como Operario Demo
-    </button>
+    <div class="divider"><span>o</span></div>
+    <button class="btn-secondary-login" type="button" id="btnDemoLogin"><i class="fa-solid fa-user-gear"></i> Entrar como Demo</button>
   </div>
 
-  <script src="./js/utils/crypto.js"></script>
+  <!-- Cargamos los scripts en el ORDEN CORRECTO -->
+  <script src="./js/core/crypto.js"></script>
   <script src="./js/config.js"></script>
-  <script src="./js/services/apiService.js"></script>
-  <!-- RUTA CORREGIDA SEGÚN TU ESTRUCTURA -->
-  <script src="./js/services/authService.js"></script>
+  <script src="./js/core/apiService.js"></script>
+  <script src="./js/auth.js"></script>
 </body>
 </html>
