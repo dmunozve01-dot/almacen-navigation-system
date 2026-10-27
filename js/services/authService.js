@@ -1,21 +1,28 @@
-function checkAppSession() {
+/**
+ * AUTENTICACIÓN, SESIÓN Y ROLES
+ */
+
+// 1. Verificar sesión al cargar app.html
+window.checkAppSession = function() {
   const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
                       JSON.parse(localStorage.getItem('sw_session_user'));
 
   if (!sessionUser) {
     window.location.assign('index.html');
-  } else {
-    const nameEl = document.getElementById('userName');
-    const emailEl = document.getElementById('userEmail');
-    const avatarEl = document.getElementById('userAvatar');
-
-    if (nameEl) nameEl.innerText = sessionUser.name;
-    if (emailEl) emailEl.innerText = sessionUser.email;
-    if (avatarEl && sessionUser.picture) avatarEl.src = sessionUser.picture;
+    return;
   }
-}
 
-function handleCredentialResponse(response) {
+  const nameEl = document.getElementById('userName');
+  const emailEl = document.getElementById('userEmail');
+  const avatarEl = document.getElementById('userAvatar');
+
+  if (nameEl) nameEl.innerText = sessionUser.name || "Usuario";
+  if (emailEl) emailEl.innerText = sessionUser.email || "Sin correo";
+  if (avatarEl && sessionUser.picture) avatarEl.src = sessionUser.picture;
+};
+
+// 2. Callback de Google (Se llama automáticamente desde index.html)
+window.handleCredentialResponse = function(response) {
   const payload = parseJwt(response.credential);
   const userData = {
     name: payload.name,
@@ -23,34 +30,64 @@ function handleCredentialResponse(response) {
     picture: payload.picture
   };
   saveUserSession(userData);
-}
+};
 
+// 3. Guardar sesión consultando el rol en Google Sheets
 async function saveUserSession(userData) {
   const rememberEl = document.getElementById('rememberMe');
   const remember = rememberEl ? rememberEl.checked : false;
 
-  // 1. Consultar Rol a la nube
+  // Consultar Rol a Google Sheets (por defecto será USER)
   let role = "USER";
   if (typeof apiService !== 'undefined') {
-    role = await apiService.getUserRole(userData.email);
-    userData.role = role;
-    apiService.syncUser(userData);
+    try {
+      role = await apiService.getUserRole(userData.email);
+      userData.role = role;
+      // Registra o actualiza al usuario en el Sheet
+      apiService.syncUser(userData); 
+    } catch (e) {
+      console.warn("No se pudo consultar el rol, usando USER por defecto.");
+      userData.role = "USER";
+    }
   }
 
-  // 2. Guardar en navegador
-  if (remember) localStorage.setItem('sw_session_user', JSON.stringify(userData));
-  else sessionStorage.setItem('sw_session_user', JSON.stringify(userData));
+  // Guardar en el navegador
+  if (remember) {
+    localStorage.setItem('sw_session_user', JSON.stringify(userData));
+  } else {
+    sessionStorage.setItem('sw_session_user', JSON.stringify(userData));
+  }
 
-  // 3. Redirigir
+  // Redirigir al mapa
   window.location.assign('app.html');
 }
 
-function logout() {
+// 4. Cerrar Sesión (Asegurado en window para que el botón HTML lo encuentre)
+window.logout = function() {
   sessionStorage.removeItem('sw_session_user');
   localStorage.removeItem('sw_session_user');
   window.location.assign('index.html');
-}
+};
 
+// 5. Aplicar visibilidad de Admin/User al cargar el dashboard
+window.applyUserRole = function() {
+  const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
+                      JSON.parse(localStorage.getItem('sw_session_user'));
+                      
+  const btnAdmin = document.getElementById('btnAdmin');
+  
+  if (sessionUser && sessionUser.role === "ADMIN") {
+    if (btnAdmin) btnAdmin.classList.remove('hidden');
+  } else {
+    if (btnAdmin) btnAdmin.classList.add('hidden');
+    // Forzar vista de usuario si no es admin
+    if (typeof app !== 'undefined' && app.setRole) {
+      app.setRole('user');
+    }
+  }
+};
+
+// 6. Decodificador de Token JWT
 function parseJwt(token) {
   try {
     const base64Url = token.split('.')[1];
@@ -59,23 +96,13 @@ function parseJwt(token) {
       return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(''));
     return JSON.parse(jsonPayload);
-  } catch (e) { return {}; }
-}
-
-function applyUserRole() {
-  const sessionUser = JSON.parse(sessionStorage.getItem('sw_session_user')) || 
-                      JSON.parse(localStorage.getItem('sw_session_user'));
-  const btnAdmin = document.getElementById('btnAdmin');
-  
-  if (sessionUser && sessionUser.role === "ADMIN") {
-    if (btnAdmin) btnAdmin.classList.remove('hidden');
-  } else {
-    if (btnAdmin) btnAdmin.classList.add('hidden');
-    if (typeof app !== 'undefined' && app.setRole) app.setRole('user');
+  } catch (e) {
+    console.error("Error parseando token", e);
+    return {};
   }
 }
 
-// Botón Demo
+// 7. Lógica del Botón Demo (en index.html)
 document.addEventListener('DOMContentLoaded', () => {
   const btnDemo = document.getElementById('btnDemoLogin');
   if (btnDemo) {

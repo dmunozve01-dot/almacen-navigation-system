@@ -24,7 +24,8 @@
             <strong id="userName">Operario</strong>
             <span id="userEmail" class="email">operario@almacen.com</span>
           </div>
-          <button class="btn-logout" onclick="logout()" title="Cerrar Sesión">
+          <!-- BOTÓN SALIR CORREGIDO -->
+          <button class="btn-logout" onclick="window.logout()" title="Cerrar Sesión">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
@@ -35,7 +36,7 @@
         <button id="btnUser" class="btn-tab active" onclick="app.setRole('user')">
           <i class="fa-solid fa-route"></i> Navegar
         </button>
-        <!-- Este botón está oculto por defecto, se muestra solo si es admin -->
+        <!-- Botón Admin (oculto por defecto) -->
         <button id="btnAdmin" class="btn-tab hidden" onclick="app.setRole('admin')">
           <i class="fa-solid fa-user-gear"></i> Mapear Admin
         </button>
@@ -130,11 +131,12 @@
   <script src="js/controllers/appController.js"></script>
 
   <script>
-    // Validar sesión del usuario al cargar la página
+    // 1. Validar sesión del usuario al cargar la página
     checkAppSession();
-    // Aplicar visibilidad de roles
+    
+    // 2. Esperar a que el DOM esté listo para aplicar los roles (ocultar/mostrar admin)
     document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(applyUserRole, 100); 
+      setTimeout(applyUserRole, 150); 
     });
   </script>
 </body>
