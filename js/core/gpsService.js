@@ -11,7 +11,7 @@ class GPSService {
       return;
     }
 
-    // 1. Obtener ubicación inicial de alta precisión
+    // Obtener ubicación inicial con precisión máxima
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         this.currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -24,7 +24,7 @@ class GPSService {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
 
-    // 2. Rastreo continuo
+    // Rastreo continuo (para que el punto azul se mueva si caminas)
     this.watchId = navigator.geolocation.watchPosition(
       (pos) => {
         this.currentPosition = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -36,7 +36,6 @@ class GPSService {
   }
 
   useFallback(onPositionUpdate) {
-    // Si falla el GPS, forzamos las coordenadas del Staging
     this.currentPosition = {
       lat: APP_CONFIG.STAGING_LOCATION.lat,
       lng: APP_CONFIG.STAGING_LOCATION.lng

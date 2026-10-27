@@ -27,9 +27,10 @@
         <button id="btnAdmin" class="btn-tab hidden"><i class="fa-solid fa-user-gear"></i> Mapear (Admin)</button>
       </div>
 
+      <!-- PANEL OPERARIO -->
       <section id="userPanel" class="panel active">
         <div class="card card-gps">
-          <h3><i class="fa-solid fa-satellite-dish"></i> GPS</h3>
+          <h3><i class="fa-solid fa-satellite-dish"></i> GPS Operario</h3>
           <div class="status-indicator">
             <span class="pulse-dot"></span>
             <span id="gpsStatusText">Buscando GPS...</span>
@@ -44,24 +45,33 @@
         </div>
       </section>
 
+      <!-- PANEL ADMINISTRADOR -->
       <section id="adminPanel" class="panel">
         <div class="card">
           <h3><i class="fa-solid fa-map-pin"></i> Mapear Slot</h3>
-          <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Haz clic en el mapa para ubicar el slot.</p>
-          <div class="coords-box" id="adminCoordsBox">Lat: - , Lng: -</div>
+          <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">Párate frente a la estantería y captura tu GPS exacto.</p>
+          
+          <button class="btn btn-secondary" id="btnCaptureGPS" style="margin-bottom: 10px; background:#0ea5e9; color:white;">
+            <i class="fa-solid fa-crosshairs"></i> 1. Capturar Mi Ubicación
+          </button>
+          
+          <div class="coords-box" id="adminCoordsBox" style="color: #64748b; font-weight: bold; margin-bottom: 15px;">Esperando captura...</div>
+          
           <div class="form-group"><label>Código Slot</label><input type="text" id="adminCodeInput" placeholder="Ej: 1730"></div>
           <div class="form-group">
             <label>Zona</label>
             <select id="adminZoneSelect">
               <option value="STAGING">STAGING</option>
               <option value="ZONA VIRÚ">ZONA VIRÚ</option>
+              <option value="ZONA CHICAMA">ZONA CHICAMA</option>
               <option value="ZONA TRUJILLO">ZONA TRUJILLO</option>
             </select>
           </div>
-          <button class="btn btn-success" id="btnSaveWaypoint"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+          <button class="btn btn-success" id="btnSaveWaypoint"><i class="fa-solid fa-floppy-disk"></i> 2. Guardar Slot</button>
         </div>
       </section>
     </aside>
+    
     <main class="map-viewport"><div id="map"></div></main>
   </div>
 
@@ -74,15 +84,13 @@
   <script src="./js/auth.js"></script>
   <script src="./js/ui/appController.js"></script>
 
-  <!-- SCRIPT DE SEGURIDAD: Bloquear el botón "Atrás" en el mapa -->
+  <!-- Bloqueo del botón "Atrás" -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const user = sessionStorage.getItem('sw_user') || localStorage.getItem('sw_user');
       if (user) {
         history.pushState(null, null, location.href);
-        window.onpopstate = function () {
-          history.go(1); 
-        };
+        window.onpopstate = function () { history.go(1); };
       }
     });
   </script>
