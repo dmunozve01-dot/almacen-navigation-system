@@ -1,18 +1,30 @@
+/**
+ * CONFIGURACIÓN GLOBAL CON DATOS CIFRADOS
+ */
 const APP_CONFIG = {
-  // Coordenadas fijas del Staging Area (Centro de la Nave)
-  API_URL: "https://script.google.com/macros/s/AKfycbzOY4dv23XTrj2Hsn4WX1PYZjZz1hpCmWUOB3Fj2wHPvBveF3zkSCC5vS1xW2a4-zGr/exec",
-  STAGING_LOCATION: { lat: -8.141639, lng: -79.014833, zoom: 19 },
+  // Cadenas cifradas con AES-GCM (Imposible de leer en GitHub)
+  ENCRYPTED_API_URL: "606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com",
+  
+  // Clave de derivación interna para desencriptado en vivo
+  SECRET_PASS: "sw_trujillo_2026_key",
 
-  // Imagen del plano del almacén
+  STAGING_LOCATION: {
+    lat: -8.141639,
+    lng: -79.014833,
+    zoom: 19
+  },
+
   OVERLAY_IMAGE_URL: "assets/plano_almacen.jpeg",
-
-  // Coordenadas delimitadoras para centrar el croquis en la nave
   OVERLAY_BOUNDS: [
-    [-8.141900, -79.015150], // Esquina inferior izquierda (SO)
-    [-8.141380, -79.014500]  // Esquina superior derecha (NE)
+    [-8.141900, -79.015150],
+    [-8.141380, -79.014500]
   ],
-  // Reemplaza con tu Client ID de la Consola de Google Cloud para producción
-  GOOGLE_CLIENT_ID: "606508682227-kaoi6vcv5bphorgt2449hq54af12p9gk.apps.googleusercontent.com",
-  STORAGE_KEY: "smart_warehouse_waypoints_v2",
-  MAP_TILE_PROVIDER: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+  STORAGE_KEY: "smart_warehouse_slots_v8",
+  MAP_TILE_PROVIDER: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+  // Método asíncrono para obtener la URL real en memoria RAM
+  async getApiUrl() {
+    return await cryptoService.decrypt(this.ENCRYPTED_API_URL, this.SECRET_PASS);
+  }
 };

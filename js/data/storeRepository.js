@@ -1,7 +1,3 @@
-/**
- * REPOSITORIO DE DATOS PURO CON GOOGLE SHEETS
- * (Sin uso de localStorage)
- */
 class StoreRepository {
   constructor() {
     // Datos de inicialización por defecto (Fallback en memoria)

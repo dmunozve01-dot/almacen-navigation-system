@@ -1,70 +1,71 @@
 /**
- * SERVICIO DE API CONECTADO A GOOGLE SHEETS
+ * SERVICIO DE API CON SEGURIDAD DESENCRIPTADA EN MEMORIA
  */
 class APIService {
-  constructor() {
-    this.apiUrl = APP_CONFIG.API_URL;
+
+  async getBaseUrl() {
+    return await APP_CONFIG.getApiUrl();
   }
 
-  // Guardar datos del usuario que inicia sesión
   async syncUser(userData) {
-    if (!this.apiUrl || this.apiUrl.includes("TU_SCRIPT_ID_AQUI")) return;
+    const url = await this.getBaseUrl();
+    if (!url) return;
 
     try {
-      await fetch(this.apiUrl, {
+      await fetch(url, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "saveUser", user: userData })
       });
     } catch (err) {
-      console.warn("Error guardando usuario en Sheet:", err);
+      console.warn("Error enviando usuario a la base de datos:", err);
     }
   }
 
-  // Obtener slots almacenados en la hoja de cálculo
   async getSlots() {
-    if (!this.apiUrl || this.apiUrl.includes("TU_SCRIPT_ID_AQUI")) return null;
+    const url = await this.getBaseUrl();
+    if (!url) return null;
 
     try {
-      const res = await fetch(`${this.apiUrl}?action=getSlots`);
+      const res = await fetch(`${url}?action=getSlots`);
       const json = await res.json();
       return json.success ? json.data : null;
     } catch (err) {
-      console.warn("Error leyendo de Google Sheets, usando caché local:", err);
+      console.warn("Error leyendo datos de la nube:", err);
       return null;
     }
   }
 
-  // Guardar slot mapeado
   async saveSlot(slotData) {
-    if (!this.apiUrl || this.apiUrl.includes("TU_SCRIPT_ID_AQUI")) return;
+    const url = await this.getBaseUrl();
+    if (!url) return;
 
     try {
-      await fetch(this.apiUrl, {
+      await fetch(url, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "saveSlot", slot: slotData })
       });
     } catch (err) {
-      console.warn("Error enviando slot a Google Sheets:", err);
+      console.warn("Error guardando slot en la nube:", err);
     }
   }
 
-  // Eliminar slot
   async deleteSlot(code) {
-    if (!this.apiUrl || this.apiUrl.includes("https://script.google.com/macros/s/AKfycbzOY4dv23XTrj2Hsn4WX1PYZjZz1hpCmWUOB3Fj2wHPvBveF3zkSCC5vS1xW2a4-zGr/exec")) return;
+    const url = await this.getBaseUrl();
+    if (!url) return;
 
     try {
-      await fetch(this.apiUrl, {
+      await fetch(url, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "deleteSlot", code: code })
       });
     } catch (err) {
-      console.warn("Error borrando slot en Google Sheets:", err);
+      console.warn("Error eliminando slot en la nube:", err);
     }
   }
 }
