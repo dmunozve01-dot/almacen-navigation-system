@@ -8,7 +8,7 @@ class AppController {
     this.tempMarker = null;
     this.slotMarkers = [];
     this.waypoints = [];
-    this.capturedCoords = null; // Aquí guardaremos las coordenadas exactas al presionar el botón
+    this.capturedCoords = null;
   }
 
   async init() {
@@ -19,10 +19,7 @@ class AppController {
     this.setupListeners();
     this.initMap();
     
-    // Iniciar rastreo GPS (actualiza el punto azul en el mapa)
     this.gpsService.startTracking(pos => this.updateGPS(pos), err => console.warn("GPS offline"));
-    
-    // Cargar Slots guardados desde Google Sheets
     this.waypoints = await this.storeRepo.loadFromCloud();
     this.drawSlots();
   }
@@ -33,11 +30,8 @@ class AppController {
     document.getElementById('btnCenterMap').addEventListener('click', () => this.centerMap());
     document.getElementById('btnSearchRoute').addEventListener('click', () => this.traceRoute());
     document.getElementById('btnClearRoute').addEventListener('click', () => this.clearRoute());
-    
-    // Botón mágico para capturar GPS sin dar clics en el mapa
     document.getElementById('btnCaptureGPS').addEventListener('click', () => this.captureCurrentGPS());
     document.getElementById('btnSaveWaypoint').addEventListener('click', () => this.saveSlot());
-    
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') this.traceRoute();
     });
@@ -47,17 +41,12 @@ class AppController {
     const { lat, lng, zoom } = APP_CONFIG.STAGING_LOCATION;
     this.map = L.map('map', { zoomControl: true }).setView([lat, lng], zoom);
     L.tileLayer(APP_CONFIG.MAP_TILE_PROVIDER, { maxZoom: 21 }).addTo(this.map);
-    
-    // Plano del almacén
     L.imageOverlay(APP_CONFIG.OVERLAY_IMAGE_URL, APP_CONFIG.OVERLAY_BOUNDS, { opacity: 0.9 }).addTo(this.map);
-
     setTimeout(() => this.map.invalidateSize(), 300);
   }
 
   updateGPS(pos) {
     document.getElementById('gpsStatusText').innerText = `GPS: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
-    
-    // Pintamos tu ubicación actual en tiempo real
     if (!this.userMarker) {
       const icon = L.divIcon({
         className: 'user-icon',
@@ -69,22 +58,41 @@ class AppController {
     }
   }
 
-  captureCurrentGPS() {
-    // Obtiene la latitud y longitud exactas de tu hardware GPS
-    const pos = this.gpsService.getCurrentPosition();
-    this.capturedCoords = pos;
+  // --- CAPTURA DE ALTA PRECISIÓN ---
+  async captureCurrentGPS() {
+    const btn = document.getElementById('btnCaptureGPS');
+    const coordsBox = document.getElementById('adminCoordsBox');
+    
+    // Estado de carga
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Capturando... (No muevas el celular)';
+    btn.disabled = true;
+    coordsBox.innerText = "Estabilizando señal GPS...";
+    coordsBox.style.color = "#f59e0b"; // Naranja
 
-    // Mostramos los datos con 6 decimales (precisión centimétrica)
-    document.getElementById('adminCoordsBox').innerText = `📍 Capturado: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
-    document.getElementById('adminCoordsBox').style.color = "#16a34a"; // Color verde
-    
-    // Hacemos zoom en el mapa para que veas exactamente dónde se guardará
-    this.map.setView([pos.lat, pos.lng], 21);
-    
-    if (this.tempMarker) this.map.removeLayer(this.tempMarker);
-    this.tempMarker = L.marker([pos.lat, pos.lng], {
-      icon: L.divIcon({ className: 'temp-icon', html: `<div style="background:red; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow: 0 0 5px black;"></div>` })
-    }).addTo(this.map);
+    try {
+      // Llamamos a la función de promediado
+      const pos = await this.gpsService.captureHighAccuracyPoint();
+      this.capturedCoords = pos;
+
+      coordsBox.innerText = `📍 Precisión Alta: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+      coordsBox.style.color = "#16a34a"; // Verde
+      
+      this.map.setView([pos.lat, pos.lng], 21);
+      
+      if (this.tempMarker) this.map.removeLayer(this.tempMarker);
+      this.tempMarker = L.marker([pos.lat, pos.lng], {
+        icon: L.divIcon({ className: 'temp-icon', html: `<div style="background:red; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow: 0 0 5px black;"></div>` })
+      }).addTo(this.map);
+
+    } catch (error) {
+      alert("⚠️ " + error.message);
+      coordsBox.innerText = "Error de captura. Intenta de nuevo.";
+      coordsBox.style.color = "#dc2626"; // Rojo
+    } finally {
+      // Restaurar botón
+      btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> 1. Capturar Mi Ubicación';
+      btn.disabled = false;
+    }
   }
 
   saveSlot() {
@@ -94,7 +102,6 @@ class AppController {
     if (!this.capturedCoords) return alert("⚠️ Primero debes hacer clic en 'Capturar Mi Ubicación'.");
     if (!code) return alert("Escribe un código para el slot.");
 
-    // Guardamos usando las coordenadas exactas que capturó el botón
     this.waypoints = this.storeRepo.saveOrUpdate({
       code: code, 
       name: `Slot ${code}`, 
@@ -105,7 +112,6 @@ class AppController {
 
     this.drawSlots();
     
-    // Limpiamos el formulario para mapear el siguiente
     document.getElementById('adminCodeInput').value = '';
     document.getElementById('adminCoordsBox').innerText = 'Esperando captura...';
     document.getElementById('adminCoordsBox').style.color = "#64748b";
@@ -131,7 +137,6 @@ class AppController {
   drawSlots() {
     this.slotMarkers.forEach(m => this.map.removeLayer(m));
     this.slotMarkers = [];
-
     this.waypoints.forEach(wp => {
       const marker = L.marker([wp.lat, wp.lng], {
         icon: L.divIcon({ 
@@ -150,12 +155,9 @@ class AppController {
 
     const start = this.gpsService.getCurrentPosition();
     this.clearRoute();
-
-    // Línea punteada azul desde ti hasta la estantería
     this.routeLine = L.polyline([[start.lat, start.lng], [target.lat, target.lng]], { 
       color: '#2563eb', weight: 6, dashArray: '10, 10', lineCap: 'round' 
     }).addTo(this.map);
-
     this.map.fitBounds(this.routeLine.getBounds(), { padding: [50, 50] });
     setTimeout(() => { this.map.setZoom(20); }, 1000);
   }
