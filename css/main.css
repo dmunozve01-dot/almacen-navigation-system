@@ -82,7 +82,7 @@ html, body {
   height: 100%; 
   width: 100%;
   position: relative;
-  background: #e5e3df; /* Color de fondo por defecto de mapa */
+  background: #e5e3df;
 }
 
 #map { 
@@ -147,17 +147,20 @@ input[type="text"], select { width: 100%; padding: 9px; border: 1px solid var(--
 .gps-animated-route { stroke-dasharray: 8, 8; animation: dash 1s linear infinite; }
 @keyframes dash { to { stroke-dashoffset: -16; } }
 
-/* VISTA ADAPTATIVA PARA CELULARES Y TABLETS */
+/* =========================================
+   VISTA ADAPTATIVA PARA CELULARES Y TABLETS 
+   ========================================= */
 @media screen and (max-width: 768px) {
   .app-layout {
     display: flex;
-    flex-direction: column-reverse; /* El mapa queda en la parte superior */
+    flex-direction: column-reverse; /* El mapa queda arriba, el menú abajo */
     height: 100vh;
     width: 100vw;
+    overflow: hidden;
   }
 
   .map-viewport {
-    height: 52vh !important; /* Altura calculada para el mapa en móvil */
+    height: 45vh !important; /* El mapa ocupa el 45% de la pantalla */
     width: 100vw !important;
     position: relative;
     flex: none;
@@ -165,11 +168,13 @@ input[type="text"], select { width: 100%; padding: 9px; border: 1px solid var(--
 
   .sidebar {
     width: 100vw;
-    height: 48vh !important; /* Altura para el panel inferior */
+    height: 55vh !important; /* El menú ocupa el 55% restante */
     border-right: none;
     border-top: 2px solid var(--border-color);
     padding: 12px;
     flex: none;
+    overflow-y: auto; /* ESTO PERMITE HACER SCROLL HACIA ABAJO */
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
   }
 
   .btn {
