@@ -8,7 +8,7 @@ class AppController {
     this.tempMarker = null;
     this.slotMarkers = [];
     this.waypoints = [];
-    this.capturedCoords = null;
+    this.capturedCoords = null; 
   }
 
   async init() {
@@ -19,7 +19,10 @@ class AppController {
     this.setupListeners();
     this.initMap();
     
+    // Iniciar GPS con el nuevo filtro de estabilidad
     this.gpsService.startTracking(pos => this.updateGPS(pos), err => console.warn("GPS offline"));
+    
+    // Cargar Slots guardados
     this.waypoints = await this.storeRepo.loadFromCloud();
     this.drawSlots();
   }
@@ -30,8 +33,11 @@ class AppController {
     document.getElementById('btnCenterMap').addEventListener('click', () => this.centerMap());
     document.getElementById('btnSearchRoute').addEventListener('click', () => this.traceRoute());
     document.getElementById('btnClearRoute').addEventListener('click', () => this.clearRoute());
+    
+    // Botón de captura exacta
     document.getElementById('btnCaptureGPS').addEventListener('click', () => this.captureCurrentGPS());
     document.getElementById('btnSaveWaypoint').addEventListener('click', () => this.saveSlot());
+    
     document.getElementById('searchInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') this.traceRoute();
     });
@@ -41,44 +47,79 @@ class AppController {
     const { lat, lng, zoom } = APP_CONFIG.STAGING_LOCATION;
     this.map = L.map('map', { zoomControl: true }).setView([lat, lng], zoom);
     L.tileLayer(APP_CONFIG.MAP_TILE_PROVIDER, { maxZoom: 21 }).addTo(this.map);
+    
+    // Plano del almacén
     L.imageOverlay(APP_CONFIG.OVERLAY_IMAGE_URL, APP_CONFIG.OVERLAY_BOUNDS, { opacity: 0.9 }).addTo(this.map);
+
     setTimeout(() => this.map.invalidateSize(), 300);
   }
 
   updateGPS(pos) {
     document.getElementById('gpsStatusText').innerText = `GPS: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
+    
     if (!this.userMarker) {
+      // Diseño de PIN CLAVADO (No flota, la punta toca la coordenada exacta)
       const icon = L.divIcon({
         className: 'user-icon',
-        html: `<div style="width:16px; height:16px; background:#2563eb; border:3px solid white; border-radius:50%; box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);"></div>`
+        html: `
+          <div style="position: relative; width: 24px; height: 24px;">
+            <!-- El pin azul -->
+            <div style="
+              width: 24px; 
+              height: 24px; 
+              background: #2563eb; 
+              border: 3px solid white; 
+              border-radius: 50% 50% 50% 0; 
+              transform: rotate(-45deg);
+              box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+              position: absolute;
+              top: 0;
+            "></div>
+            <!-- El centro blanco -->
+            <div style="
+              width: 8px; 
+              height: 8px; 
+              background: white; 
+              border-radius: 50%; 
+              position: absolute; 
+              top: 6px; 
+              left: 6px;
+            "></div>
+          </div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 24] // La punta del pin (abajo) es la coordenada exacta
       });
+      
       this.userMarker = L.marker([pos.lat, pos.lng], { icon }).addTo(this.map).bindPopup("📍 Estás aquí");
     } else {
+      // Actualización instantánea
       this.userMarker.setLatLng([pos.lat, pos.lng]);
     }
   }
 
-  // --- CAPTURA DE ALTA PRECISIÓN ---
   async captureCurrentGPS() {
     const btn = document.getElementById('btnCaptureGPS');
     const coordsBox = document.getElementById('adminCoordsBox');
     
-    // Estado de carga
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Capturando... (No muevas el celular)';
+    // Bloqueamos el botón mientras captura
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Capturando... (No te muevas)';
     btn.disabled = true;
     coordsBox.innerText = "Estabilizando señal GPS...";
     coordsBox.style.color = "#f59e0b"; // Naranja
 
     try {
-      // Llamamos a la función de promediado
+      // Llamada al promedio de 10 lecturas de alta precisión
       const pos = await this.gpsService.captureHighAccuracyPoint();
       this.capturedCoords = pos;
 
       coordsBox.innerText = `📍 Precisión Alta: ${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}`;
       coordsBox.style.color = "#16a34a"; // Verde
       
+      // Hacemos zoom al punto capturado
       this.map.setView([pos.lat, pos.lng], 21);
       
+      // Pintamos el pin rojo temporal donde se guardará
       if (this.tempMarker) this.map.removeLayer(this.tempMarker);
       this.tempMarker = L.marker([pos.lat, pos.lng], {
         icon: L.divIcon({ className: 'temp-icon', html: `<div style="background:red; width:14px; height:14px; border-radius:50%; border:2px solid white; box-shadow: 0 0 5px black;"></div>` })
@@ -89,7 +130,7 @@ class AppController {
       coordsBox.innerText = "Error de captura. Intenta de nuevo.";
       coordsBox.style.color = "#dc2626"; // Rojo
     } finally {
-      // Restaurar botón
+      // Restauramos el botón
       btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> 1. Capturar Mi Ubicación';
       btn.disabled = false;
     }
@@ -102,6 +143,7 @@ class AppController {
     if (!this.capturedCoords) return alert("⚠️ Primero debes hacer clic en 'Capturar Mi Ubicación'.");
     if (!code) return alert("Escribe un código para el slot.");
 
+    // Guardar usando las coordenadas exactas capturadas
     this.waypoints = this.storeRepo.saveOrUpdate({
       code: code, 
       name: `Slot ${code}`, 
@@ -112,6 +154,7 @@ class AppController {
 
     this.drawSlots();
     
+    // Limpiar formulario
     document.getElementById('adminCodeInput').value = '';
     document.getElementById('adminCoordsBox').innerText = 'Esperando captura...';
     document.getElementById('adminCoordsBox').style.color = "#64748b";
@@ -137,6 +180,7 @@ class AppController {
   drawSlots() {
     this.slotMarkers.forEach(m => this.map.removeLayer(m));
     this.slotMarkers = [];
+
     this.waypoints.forEach(wp => {
       const marker = L.marker([wp.lat, wp.lng], {
         icon: L.divIcon({ 
@@ -155,9 +199,12 @@ class AppController {
 
     const start = this.gpsService.getCurrentPosition();
     this.clearRoute();
+
+    // Línea punteada azul desde ti hasta la estantería
     this.routeLine = L.polyline([[start.lat, start.lng], [target.lat, target.lng]], { 
       color: '#2563eb', weight: 6, dashArray: '10, 10', lineCap: 'round' 
     }).addTo(this.map);
+
     this.map.fitBounds(this.routeLine.getBounds(), { padding: [50, 50] });
     setTimeout(() => { this.map.setZoom(20); }, 1000);
   }
